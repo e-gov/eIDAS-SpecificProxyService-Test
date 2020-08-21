@@ -17,15 +17,11 @@ import static io.restassured.RestAssured.given;
 
 public class MobileId {
     @Step("Authenticates with Mobile-ID")
-    public static Response authenticateWithMobileId(Flow flow, String taraUrl, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException, URISyntaxException, IOException {
-        Response authenticationResponse = Requests.followRedirect(flow, taraUrl);
-        String location = authenticationResponse.then().extract().response()
-                .getHeader("location");
-        Response taraLoginPageResponse = Requests.followRedirect(flow, location);
+    public static Response authenticateWithMobileId(Flow flow, Response taraLoginPageResponse, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException, URISyntaxException, IOException {
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response submitResponse = submitMobileIdLogin(flow, mobileNo, idCode, execution, location);
+        Response submitResponse = submitMobileIdLogin(flow, mobileNo, idCode, execution, flow.specificProxyService.getTaraLoginPageUrl());
         String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response pollResponse = pollForAuthentication(flow, execution2, location, pollMillis);
+        Response pollResponse = pollForAuthentication(flow, execution2, flow.specificProxyService.getTaraLoginPageUrl(), pollMillis);
         return Oidc.followLoginRedirects(flow, pollResponse.getHeader("location"));
     }
 

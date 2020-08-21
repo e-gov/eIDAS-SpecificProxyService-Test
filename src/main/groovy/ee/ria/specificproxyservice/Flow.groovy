@@ -29,6 +29,7 @@ class SpecificProxyService {
     String metadataUrl
     String authenticationRequestUrl
     String consentUrl
+    String taraLoginPageUrl
     // @formatter:off
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
     @Lazy fullAuthenticationRequestUrl = "${protocol}://${host}:${port}${authenticationRequestUrl}"

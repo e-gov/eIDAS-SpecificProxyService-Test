@@ -82,6 +82,7 @@ class Requests {
                 .then()
                 .extract().response();
     }
+
     @Step("Consent Submit")
     static Response consentSubmit(Flow flow, String token) {
         Response response =
@@ -89,11 +90,42 @@ class Requests {
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .queryParam("token", token)
-
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
                         .when()
                         .redirects().follow(false)
                         .get(flow.specificProxyService.fullConsentUrl)
+                        .then()
+                        .extract().response()
+        return response
+    }
+
+    @Step("Consent Cancel")
+    static Response consentCancel(Flow flow, String token) {
+        Response response =
+                given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .queryParam("token", token)
+                        .queryParam("cancel", true)
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .get(flow.specificProxyService.fullConsentUrl)
+                        .then()
+                        .extract().response()
+        return response
+    }
+
+    @Step("Return to service provider without authentication")
+    static Response backToServiceProvider(Flow flow, String url) {
+        Response response =
+                given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .get(url)
                         .then()
                         .extract().response()
         return response

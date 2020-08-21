@@ -19,7 +19,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 
-public class SamlSigantureUtils {
+public class SamlSignatureUtils {
     public static Boolean validateSamlResponseSignature(String body) {
         XmlPath metadataXml = new XmlPath(body);
         try {
