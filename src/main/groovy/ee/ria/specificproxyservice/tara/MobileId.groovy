@@ -1,33 +1,33 @@
-package ee.ria.specificproxyservice.tara;
+package ee.ria.specificproxyservice.tara
 
 
-import ee.ria.specificproxyservice.Flow;
-import ee.ria.specificproxyservice.Requests;
-import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
-import io.restassured.response.Response;
-import org.joda.time.DateTime;
+import ee.ria.specificproxyservice.Flow
+import ee.ria.specificproxyservice.Requests
+import io.qameta.allure.Step
+import io.qameta.allure.restassured.AllureRestAssured
+import io.restassured.response.Response
+import org.joda.time.DateTime
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException
+import java.net.URISyntaxException
+import java.util.HashMap
+import java.util.Map
 
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.given
 
-public class MobileId {
+class MobileId {
     @Step("Authenticates with Mobile-ID")
-    public static Response authenticateWithMobileId(Flow flow, Response taraLoginPageResponse, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException, URISyntaxException, IOException {
-        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response submitResponse = submitMobileIdLogin(flow, mobileNo, idCode, execution, flow.specificProxyService.getTaraLoginPageUrl());
-        String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response pollResponse = pollForAuthentication(flow, execution2, flow.specificProxyService.getTaraLoginPageUrl(), pollMillis);
-        return Oidc.followLoginRedirects(flow, pollResponse.getHeader("location"));
+    static Response authenticateWithMobileId(Flow flow, Response taraLoginPageResponse, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException, URISyntaxException, IOException {
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
+        Response submitResponse = submitMobileIdLogin(flow, mobileNo, idCode, execution, flow.specificProxyService.getTaraLoginPageUrl())
+        String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
+        Response pollResponse = pollForAuthentication(flow, execution2, flow.specificProxyService.getTaraLoginPageUrl(), pollMillis)
+        return Oidc.followLoginRedirects(flow, pollResponse.getHeader("location"))
     }
 
 
     @Step("Submit Mobile-ID login")
-    public static Response submitMobileIdLogin(Flow flow, String mobileNo, String idCode, String execution, String location) {
+    static Response submitMobileIdLogin(Flow flow, String mobileNo, String idCode, String execution, String location) {
         return given()
                 .filter(flow.getCookieFilter())
                 .filter(new AllureRestAssured())
@@ -41,14 +41,14 @@ public class MobileId {
                 .when()
                 .post(location)
                 .then()
-                .extract().response();
+                .extract().response()
     }
 
     @Step("Poll Mobile-ID authentication")
-    public static Response pollForAuthentication(Flow flow, String execution, String location, Integer intervalMillis) throws InterruptedException {
-        DateTime endTime = new DateTime().plusMillis(intervalMillis * 4 + 200);
+    static Response pollForAuthentication(Flow flow, String execution, String location, Integer intervalMillis) throws InterruptedException {
+        DateTime endTime = new DateTime().plusMillis(intervalMillis * 4 + 200)
         while (new DateTime().isBefore(endTime)) {
-            Thread.sleep(intervalMillis);
+            Thread.sleep(intervalMillis)
             Response response = given()
                     .filter(flow.getCookieFilter())
                     .filter(new AllureRestAssured())
@@ -61,12 +61,12 @@ public class MobileId {
                     .when()
                     .post(location)
                     .then()
-                    .extract().response();
+                    .extract().response()
             if (response.statusCode() == 302) {
-                return response;
+                return response
             }
         }
-        throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis");
+        throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis")
     }
 /*
     @Step("Cancel Mobile-ID authentication")

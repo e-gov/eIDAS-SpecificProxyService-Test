@@ -19,9 +19,9 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 public class OpenSAMLUtils {
-    private static Logger LOGGER = LoggerFactory.getLogger(OpenSAMLUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenSAMLUtils.class);
 
-    private static RandomIdentifierGenerationStrategy secureRandomIdGenerator = new RandomIdentifierGenerationStrategy();
+    private static final RandomIdentifierGenerationStrategy secureRandomIdGenerator = new RandomIdentifierGenerationStrategy();
 
     public static <T> T buildSAMLObject(final Class<T> clazz) {
         T object;

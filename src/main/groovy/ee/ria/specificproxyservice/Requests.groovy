@@ -55,8 +55,8 @@ class Requests {
         return response
     }
 
-    @Step("TARA OpenID Connect Autentication Request")
-    public static Response followRedirect(Flow flow, String location) {
+    @Step("TARA redirect Request")
+    static Response followRedirect(Flow flow, String location) {
         return given()
                 .filter(flow.cookieFilter)
                 .filter(new AllureRestAssured())
@@ -66,11 +66,11 @@ class Requests {
                 .urlEncodingEnabled(false)
                 .get(location)
                 .then()
-                .extract().response();
+                .extract().response()
     }
 
-    @Step("{flow.endUser}Follow OpenID Connect Autentication request redirect")
-    public static Response followTARARedirect(Flow flow, String location) {
+    @Step("{flow.endUser}Follow OpenID Connect Authentication request redirect")
+    static Response followTARARedirect(Flow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
                 .filter(new AllureRestAssured())
@@ -80,7 +80,7 @@ class Requests {
                 .urlEncodingEnabled(false)
                 .get(location)
                 .then()
-                .extract().response();
+                .extract().response()
     }
 
     @Step("Consent Submit")

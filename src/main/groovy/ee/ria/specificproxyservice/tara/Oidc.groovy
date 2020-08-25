@@ -11,11 +11,11 @@ import static io.restassured.RestAssured.given
 class Oidc {
     @Step("{flow.endUser}Follow redirects after authorization")
     static Response followLoginRedirects(Flow flow, String url) {
-        Response oauth2Response = oauth2AuthorizeRedirect(flow, url);
-        return oidcAuthorizeRedirect(flow, oauth2Response.getHeader("location"));
+        Response oauth2Response = oauth2AuthorizeRedirect(flow, url)
+        return oidcAuthorizeRedirect(flow, oauth2Response.getHeader("location"))
     }
     @Step("{flow.endUser}Follow redirect - /oauth2.0/callbackAuthorize")
-    public static Response oauth2AuthorizeRedirect(Flow flow, String location) {
+    static Response oauth2AuthorizeRedirect(Flow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
                 .filter(new AllureRestAssured())
@@ -24,11 +24,11 @@ class Oidc {
                 .when()
                 .urlEncodingEnabled(false)
                 .get(location).then()
-                .extract().response();
+                .extract().response()
     }
 
     @Step("{flow.endUser}Follow redirect - /oidc/authorize")
-    public static Response oidcAuthorizeRedirect(Flow flow, String location) {
+    static Response oidcAuthorizeRedirect(Flow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
                 .filter(new AllureRestAssured())
@@ -38,6 +38,6 @@ class Oidc {
                 .urlEncodingEnabled(false)
                 .get(location)
                 .then()
-                .extract().response();
+                .extract().response()
     }
 }

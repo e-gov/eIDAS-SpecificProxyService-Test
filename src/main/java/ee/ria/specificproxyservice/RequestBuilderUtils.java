@@ -17,7 +17,7 @@ import static org.opensaml.saml.common.SAMLVersion.VERSION_20;
 
 public class RequestBuilderUtils extends ResponseAssertionBuilderUtils {
 
-/*    public AuthnRequest buildLegalAuthnRequest(Credential signCredential, String providerName, String destination, String consumerServiceUrl, String issuerValue, String loa) {
+    public AuthnRequest buildLegalAuthnRequest(Credential signCredential, String providerName, String destination, String consumerServiceUrl, String issuerValue, String loa) {
         try {
             Signature signature = prepareSignature(signCredential);
             DateTime timeNow = new DateTime();
@@ -32,7 +32,7 @@ public class RequestBuilderUtils extends ResponseAssertionBuilderUtils {
             authnRequest.setID(OpenSAMLUtils.generateSecureRandomId());
             authnRequest.setIssuer(buildIssuer(issuerValue));
             authnRequest.setNameIDPolicy(buildNameIdPolicy(NameIDType.UNSPECIFIED));
-            authnRequest.setRequestedAuthnContext(buildRequestedAuthnContext(loa));
+            authnRequest.setRequestedAuthnContext(buildRequestedAuthnContext(loa, AuthnContextComparisonTypeEnumeration.MINIMUM));
             authnRequest.setExtensions(buildLegalExtensions());
             authnRequest.setSignature(signature);
             XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(authnRequest).marshall(authnRequest);
@@ -42,7 +42,7 @@ public class RequestBuilderUtils extends ResponseAssertionBuilderUtils {
         } catch (Exception e) {
             throw new RuntimeException("SAML error:" + e.getMessage(), e);
         }
-    }*/
+    }
 
     public AuthnRequest buildAuthnRequestParams(Credential signCredential, String providerName, String destination, String consumerServiceUrl, String issuerValue, String loa, AuthnContextComparisonTypeEnumeration comparison, String nameId, String spType) {
         try {
