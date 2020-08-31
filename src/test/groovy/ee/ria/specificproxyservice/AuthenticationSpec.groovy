@@ -98,7 +98,7 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
-    def "request authentication with SPType: #spType"() {
+    def "request authentication with supported SPType: #spType"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
         Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
@@ -116,9 +116,56 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         where:
         spType         ||  familyName                  || firstName  || personalNumber      || dateOfBirth  || loa_level
         "public"       || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-        "private"      || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-        "not provided" || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-        ""             || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+    }
+
+    @Unroll
+    @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
+    def "request authentication with not supported SPType: #spType"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
+
+        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+
+        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
+        String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
+
+        Response response2 = Requests.proxyServiceRequest(flow, action, token)
+        response2.then().statusCode(302)
+
+        String taraUrl =  response2.then().extract().response().getHeader("location")
+
+        Response authenticationResponse = Requests.followRedirect(flow, taraUrl)
+
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(authenticationResponse)
+
+        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
+        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
+        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
+
+        where:
+        spType         || samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "private"      || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "Service provider type not supported. Allowed types: [public]"
+    }
+
+    @Unroll
+    @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
+    def "request authentication with invalid SPType: #spType"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
+
+        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+
+
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(response1)
+
+        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
+        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
+        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
+
+        where:
+        spType         || samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "notProvided"  || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
+        ""             || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
     }
 
     @Unroll
