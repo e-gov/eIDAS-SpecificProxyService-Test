@@ -55,6 +55,7 @@ class Connector {
     String metadataUrl
     String authenticationResponseUrl
     Credential signatureCredential
+    Credential encryptionCredential
     // @formatter:off
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
     @Lazy fullAuthenticationResponseUrl = "${protocol}://${host}:${port}${authenticationResponseUrl}"

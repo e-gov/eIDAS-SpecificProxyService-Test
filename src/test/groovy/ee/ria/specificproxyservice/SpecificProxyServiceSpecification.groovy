@@ -18,6 +18,8 @@ class SpecificProxyServiceSpecification extends Specification {
     Properties props = new Properties()
     @Shared
     Credential signatureCredential
+    @Shared
+    Credential encryptionCredential
 
     def setupSpec() {
         InitializationService.initialize()
@@ -59,11 +61,29 @@ class SpecificProxyServiceSpecification extends Specification {
 
             signatureCredential = KeystoreUtils.getCredential(keystore, props."connector.keystore.requestSigningKeyId" as String, props."connector.keystore.requestSigningKeyPassword" as String)
         }
+
         /*
         config = new RestAssuredConfig().sslConfig(new SSLConfig().
                     keyStore(testTaraProperties.getFrontEndKeystore(), testTaraProperties.getFrontEndKeystorePassword()).
                     trustStore(testTaraProperties.getBackEndTruststore(), testTaraProperties.getBackEndTruststorePassword()))
          */
+        catch (Exception e) {
+            throw new RuntimeException("Something went wrong initializing credentials:", e)
+        }
+        try {
+            KeyStore encryptionKeystore = KeyStore.getInstance("jks")
+            if (envFile) {
+                Paths.get(envProperties.getProperty("configuration_base_path"), props.getProperty("connector.encryption.keystore.file")).withInputStream {
+                    encryptionKeystore.load(it, props.get("connector.encryption.keystore.password").toString().toCharArray())
+                }
+            } else {
+                this.getClass().getResource("/${props."connector.encryption.keystore.file"}").withInputStream {
+                    encryptionKeystore.load(it, props.get("connector.encryption.keystore.password").toString().toCharArray())
+                }
+            }
+            encryptionCredential = KeystoreUtils.getCredential(encryptionKeystore, props."connector.encryption.keystore.requestEncryptionKeyId" as String, props."connector.encryption.keystore.requestEncryptionKeyPassword" as String)
+
+        }
         catch (Exception e) {
             throw new RuntimeException("Something went wrong initializing credentials:", e)
         }
