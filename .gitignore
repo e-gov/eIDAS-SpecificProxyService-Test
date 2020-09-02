@@ -34,4 +34,5 @@ build/
 
 #eidas-proxy-test
 allure-results/
+.allure
 .env

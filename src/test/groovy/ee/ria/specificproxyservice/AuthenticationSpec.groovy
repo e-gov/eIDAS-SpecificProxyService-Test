@@ -3,27 +3,19 @@ package ee.ria.specificproxyservice
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
-import org.opensaml.core.xml.schema.XSAny
 import org.opensaml.saml.saml2.core.Assertion
-import org.opensaml.saml.saml2.core.Attribute
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration
 import org.opensaml.saml.saml2.core.NameIDType
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
 
+
 class AuthenticationSpec extends SpecificProxyServiceSpecification {
     public static final String FN_DATE = "DateOfBirth"
     public static final String FN_PNO = "PersonIdentifier"
     public static final String FN_FAMILY = "FamilyName"
     public static final String FN_FIRST = "FirstName"
-    public static final String FN_ADDR = "CurrentAddress"
-    public static final String FN_GENDER = "Gender"
-    public static final String FN_BIRTH_NAME = "BirthName"
-    public static final String FN_BIRTH_PLACE = "PlaceOfBirth"
-    public static final String FN_LEGAL_NAME = "LegalName"
-    public static final String FN_LEGAL_PNO = "LegalPersonIdentifier"
-
 
     Flow flow = new Flow(props)
 
@@ -31,26 +23,6 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         flow.connector.signatureCredential = signatureCredential
         flow.connector.encryptionCredential = encryptionCredential
         flow.cookieFilter = new CookieFilter()
-    }
-
-    @Unroll
-    @Feature("Estonian authentication means return LOA_HIGH")
-    def "request authentication with LOA level: #requestLoa"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA" , requestLoa)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
-
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
-
-        assertEquals("Correct LOA is returned", responseLoa, getLoaValue(assertion))
-
-        where:
-        requestLoa                               || responseLoa
-        "http://eidas.europa.eu/LoA/low"         || "http://eidas.europa.eu/LoA/high"
-        "http://eidas.europa.eu/LoA/substantial" || "http://eidas.europa.eu/LoA/high"
-        "http://eidas.europa.eu/LoA/high"        || "http://eidas.europa.eu/LoA/high"
     }
 
     @Unroll
@@ -64,11 +36,11 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, getAttributeValue(assertion, FN_DATE))
+        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
+        assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
+        assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
+        assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
 
         where:
         nameIdFormat           || familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
@@ -88,7 +60,7 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", responseLoa, getLoaValue(assertion))
+        assertEquals("Correct LOA is returned", responseLoa, SamlUtils.getLoaValue(assertion))
 
         where:
         comparisonLevel                               | requestLoa                                   || responseLoa
@@ -108,165 +80,5 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         comparisonLevel                               | requestLoa                                   || errorResponse
         AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "003007 - value of Level of Assurance is not supported"
         AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/NotNotified/LoA/low" || "003007 - value of Level of Assurance is not supported"
-    }
-
-    @Unroll
-    @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
-    def "request authentication with supported SPType: #spType"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
-
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
-
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, getAttributeValue(assertion, FN_DATE))
-
-        where:
-        spType         ||  familyName                  || firstName  || personalNumber      || dateOfBirth  || loa_level
-        "public"       || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-    }
-
-    @Unroll
-    @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
-    def "request authentication with not supported SPType: #spType"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
-
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
-
-        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
-        String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
-
-        Response response2 = Requests.proxyServiceRequest(flow, action, token)
-        response2.then().statusCode(302)
-
-        String taraUrl =  response2.then().extract().response().getHeader("location")
-
-        Response authenticationResponse = Requests.followRedirect(flow, taraUrl)
-
-        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(authenticationResponse)
-
-        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
-        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
-        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
-
-        where:
-        spType         || samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
-        "private"      || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "Service provider type not supported. Allowed types: [public]"
-    }
-
-    @Unroll
-    @Feature("For indicating whether an authentication request is made by a private sector or public sector SPType MUST be present")
-    def "request authentication with invalid SPType: #spType"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
-
-        Response response = Requests.getAuthenticationPage(flow, samlRequest)
-
-        assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'sub-title'}").toString())
-
-
-        where:
-        spType         || errorResponse
-        "notProvided"  || "An unexpected error has occurred"
-        ""             || "An unexpected error has occurred"
-    }
-
-    @Unroll
-    @Feature("User can cancel the authentication and return to SP")
-    def "cancel authentication in IDP"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response cancelResponse = Steps.userCancelAndFollowRedirects(flow, taraLoginPageResponse)
-
-        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(cancelResponse)
-
-        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
-        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
-        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
-
-        where:
-        samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
-        "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
-      }
-
-    @Unroll
-    @Feature("User consent")
-    def "user can deny the usage of personal data"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response consentDeniedResponse = Steps.userDenyConsentAndFollowRedirects(flow, consentPageResponse)
-
-        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(consentDeniedResponse)
-
-        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
-        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
-        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
-
-        where:
-        samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
-        "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
-      }
-
-    @Unroll
-    @Feature("Optional attributes MAY be supplied by a MS if available and acceptable to national law")
-    def "request authentication with optional attributes"() {
-        expect:
-        String samlRequest = Steps.getAuthnRequestWithOptionalAttributes(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
-
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
-
-        assertEquals("Correct LOA is returned", loa_level, getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, getAttributeValue(assertion, FN_DATE))
-        assertEquals("Only mandatory attributes are returned", 4, assertion.getAttributeStatements().get(0).getAttributes().size())
-
-        where:
-        familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
-        "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-      }
-
-    @Unroll
-    @Feature("Minimal legal person attributes")
-    def "request authentication with legal attributes is currently not supported"() {
-        expect:
-        String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
-        Response response = Requests.getAuthenticationPage(flow, samlRequest)
-
-        String action = response.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
-        String token = response.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
-
-        Response errorResponse = Requests.proxyServiceRequest(flow, action, token)
-
-        assertEquals("Status 400 is returned", 400, errorResponse.statusCode())
-        assertEquals("Status message is returned", "Support for legal person attributes has been temporarily suspended", errorResponse.body().jsonPath().get("message"))
-    }
-
-    protected String getAttributeValue(Assertion assertion, String friendlyName) {
-        for (Attribute attribute : assertion.getAttributeStatements().get(0).getAttributes()) {
-            if (attribute.getFriendlyName().equals(friendlyName)) {
-                XSAny attributeValue = (XSAny) attribute.getAttributeValues().get(0)
-                return attributeValue.getTextContent()
-            }
-        }
-        throw new RuntimeException("No such attribute found: " + friendlyName)
-    }
-
-    protected String getLoaValue(Assertion assertion) {
-        return assertion.getAuthnStatements().get(0).getAuthnContext().getAuthnContextClassRef().getAuthnContextClassRef()
     }
 }
