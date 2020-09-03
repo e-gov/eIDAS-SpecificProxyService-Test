@@ -184,6 +184,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_SPTYPE")
+    @Feature("PROCESS_ERRORS")
     def "request authentication with not supported SPType: #spType"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
@@ -213,6 +214,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_SPTYPE")
+    @Feature("TECHNICAL_ERRORS")
     def "request authentication with invalid SPType: #spType"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
@@ -230,6 +232,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_LEGAL_PERSON")
+    @Feature("TECHNICAL_ERRORS")
     def "request authentication with legal attributes is currently not supported"() {
         expect:
         String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")

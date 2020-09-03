@@ -32,6 +32,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     @Feature("LOGIN_ENDPOINT_LIGHTREQUEST")
     @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
+    @Feature("CONSENT_ENDPOINT_USER_AGREE")
     def "Successful authentication with Mobile-ID"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
@@ -41,7 +42,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
         assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
         assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
         assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
@@ -54,6 +55,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
+    @Feature("PROCESS_ERRORS")
     def "cancel authentication in IDP"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
@@ -73,6 +75,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
+    @Feature("CONSENT_ENDPOINT_USER_CANCEL")
     def "user can deny the usage of personal data"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")

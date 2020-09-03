@@ -30,10 +30,12 @@ class SpecificProxyService {
     String authenticationRequestUrl
     String consentUrl
     String taraLoginPageUrl
+    String heartbeatUrl
     // @formatter:off
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
     @Lazy fullAuthenticationRequestUrl = "${protocol}://${host}:${port}${authenticationRequestUrl}"
     @Lazy fullConsentUrl = "${protocol}://${host}:${port}${consentUrl}"
+    @Lazy fullheartbeatUrl = "${protocol}://${host}:${port}${heartbeatUrl}"
 
     // @formatter:on
     SpecificProxyService(Properties properties) {
@@ -43,6 +45,7 @@ class SpecificProxyService {
         this.metadataUrl = properties."specificproxyservice.metadataUrl"
         this.authenticationRequestUrl = properties."specificproxyservice.authenticationRequestUrl"
         this.consentUrl=properties."specificproxyservice.consentUrl"
+        this.heartbeatUrl=properties."specificproxyservice.heartbeatUrl"
     }
 
 }

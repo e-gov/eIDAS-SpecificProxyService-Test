@@ -23,6 +23,19 @@ class Requests {
                 .extract().body().asString()
     }
 
+    @Step("Get heartbeat")
+    static Response getHeartbeat(Flow flow) {
+        return given()
+                .config(config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8")))
+                .relaxedHTTPSValidation()
+                .filter(new AllureRestAssured())
+                .when()
+                .get(flow.specificProxyService.fullheartbeatUrl)
+                .then()
+                .statusCode(200)
+                .extract().response()
+    }
+
     @Step("Open authentication page")
     static Response getAuthenticationPage(Flow flow, String samlRequest) {
         Response response =
