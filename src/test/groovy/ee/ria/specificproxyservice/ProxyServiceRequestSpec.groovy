@@ -5,11 +5,10 @@ import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.RestAssured
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
-import org.opensaml.core.xml.schema.XSAny
 import org.opensaml.saml.saml2.core.Assertion
-import org.opensaml.saml.saml2.core.Attribute
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration
 import org.opensaml.saml.saml2.core.NameIDType
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 import static io.restassured.RestAssured.given
@@ -47,9 +46,29 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         where:
         token                   || statusCode || message
-        ""                      || 400        || "Validation failed for object='requestParameters'. Error count: 1"
         "#¤õs"                  || 400        || "Validation failed for object='requestParameters'. Error count: 1"
         "thisIsNotCorrectToken" || 400        || "Invalid token"
+    }
+
+    @Ignore ("TARA2-95 After fix merge this test to: Error handling on ProxyServiceRequest with invalid token: #token ")
+    @Unroll
+    @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
+    @Feature("AUTHENTICATION_REQUEST_LIGHTTOKEN_ACCEPTANCE")
+    def "Error handling on ProxyServiceRequest with empty token: #token"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
+        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+
+        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
+
+        Response response2 = Requests.proxyServiceRequest(flow, action, token)
+
+        assertEquals("Correct status code is returned", statusCode, response2.getStatusCode())
+        assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
+
+        where:
+        token                   || statusCode || message
+        ""                      || 400        || "Validation failed for object='requestParameters'. Error count: 1"
     }
 
     @Unroll
@@ -68,8 +87,8 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         where:
         token                   || statusCode || message
-        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8b25Db25uZWN0b3JSZXF1ZXN0fDg1MmE2NGMwLThhYzEtNDQ1Zi1iMGUxLTk5MmFkYTQ5MzAzM3wyMDE3LTEyLTExIDE0OjEyOjA1IDE0OHw3TThwK3VQOENLWHVNaTJJcVNkYTF0ZzQ1MldsUnZjT1N3dTBkY2lzU1lFPQ"                      || 400        || "Validation failed for object='requestParameters'. Error count: 1"
-        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8IG9uQ29ubmVjdG9yUmVxdWVzdHwgODUyYTY0YzAtOGFjMS00NDVmLWIwZTEtOTkyYWRhNDkzMDMzIHwgMjAxNy0xMi0xMSAxNDoxMjowNSAxNDh8N004cCt1UDhDS1h1TWkySXFTZGExdGc0NTJXbFJ2Y09Td3UwZGNpc1NZRT0"                      || 400        || "Validation failed for object='requestParameters'. Error count: 1"
+        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8b25Db25uZWN0b3JSZXF1ZXN0fDg1MmE2NGMwLThhYzEtNDQ1Zi1iMGUxLTk5MmFkYTQ5MzAzM3wyMDE3LTEyLTExIDE0OjEyOjA1IDE0OHw3TThwK3VQOENLWHVNaTJJcVNkYTF0ZzQ1MldsUnZjT1N3dTBkY2lzU1lFPQ"      || 400  || "Invalid token"
+        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8IG9uQ29ubmVjdG9yUmVxdWVzdHwgODUyYTY0YzAtOGFjMS00NDVmLWIwZTEtOTkyYWRhNDkzMDMzIHwgMjAxNy0xMi0xMSAxNDoxMjowNSAxNDh8N004cCt1UDhDS1h1TWkySXFTZGExdGc0NTJXbFJ2Y09Td3UwZGNpc1NZRT0" || 400  || "Invalid token"
     }
 
     @Unroll
@@ -96,6 +115,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct error is returned", "Parameter 'token': must not be null", response2.getBody().jsonPath().get("errors"))
     }
 
+    @Ignore ("TARA2-95")
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     def "Error handling on over max length token"() {

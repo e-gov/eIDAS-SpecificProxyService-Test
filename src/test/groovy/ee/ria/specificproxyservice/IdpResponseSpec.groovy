@@ -50,7 +50,7 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
         String[] elements = response.getHeader("location").split('\\?|&')
 
-        Response validateableResponse = Requests.followRedirect(flow, elements[0]+code+"&"+elements[2])
+        Response validateableResponse = Requests.followRedirect(flow, elements[0]+code+elements[2])
 
         assertEquals("Correct status is returned", statusCode, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", message, validateableResponse.getBody().jsonPath().get("message"))
@@ -58,8 +58,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         where:
         code                      || statusCode || message         || error
-        "?code=some-random-code"  || 400        || "Invalid state" || null
-        ""                        || 400        || "Validation failed for object='idpCallbackRequest'. Error count: 1" || "Parameter 'state': must not be empty"
+        "?code=some-random-code&"  || 500        || "Something went wrong internally. Please consult server logs for further details." || null
+        "?"                        || 400        || "Either error or code parameter is required" || null
     }
 
     @Unroll
