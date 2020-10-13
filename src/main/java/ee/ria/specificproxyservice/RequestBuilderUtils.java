@@ -58,7 +58,9 @@ public class RequestBuilderUtils extends ResponseAssertionBuilderUtils {
             authnRequest.setAssertionConsumerServiceURL(consumerServiceUrl);
             authnRequest.setID(OpenSAMLUtils.generateSecureRandomId());
             authnRequest.setIssuer(buildIssuer(issuerValue));
-            authnRequest.setNameIDPolicy(buildNameIdPolicy(nameId));
+            if (nameId != null && !nameId.isBlank()) {
+                authnRequest.setNameIDPolicy(buildNameIdPolicy(nameId));
+            }
             authnRequest.setRequestedAuthnContext(buildRequestedAuthnContext(loa, comparison));
             authnRequest.setExtensions(buildExtensions(spType));
             authnRequest.setSignature(signature);

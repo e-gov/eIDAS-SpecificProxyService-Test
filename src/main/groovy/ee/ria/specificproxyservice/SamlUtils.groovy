@@ -19,4 +19,8 @@ class SamlUtils {
     static String getLoaValue(Assertion assertion) {
         return assertion.getAuthnStatements().get(0).getAuthnContext().getAuthnContextClassRef().getAuthnContextClassRef()
     }
+
+    static String getSubjectNameIdFormatValue(Assertion assertion) {
+        return assertion.getSubject().getNameID().getFormat()
+    }
 }
