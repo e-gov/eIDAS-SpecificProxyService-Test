@@ -16,7 +16,7 @@ class Steps {
     }
 
     @Step("Create Natural Person authentication request")
-    static String getAuthnRequest(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String nameIdFormat, String spType = "public") {
+    static String getAuthnRequest(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String nameIdFormat = NameIDType.UNSPECIFIED, String spType = "public") {
 
         AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestParams(flow.connector.signatureCredential,
                 providerName,
@@ -24,6 +24,22 @@ class Steps {
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
                 loa, comparison,nameIdFormat, spType)
+        String stringResponse = OpenSAMLUtils.getXmlString(request)
+        Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
+
+        SamlSignatureUtils.validateSamlReqSignature(stringResponse)
+        return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
+    }
+
+    @Step("Create Natural Person authentication request without nameIdFormat attribute")
+    static String getAuthnRequestWithoutNameIdFormat(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String spType = "public") {
+
+        AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestParams(flow.connector.signatureCredential,
+                providerName,
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}:${flow.specificProxyService.port}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
+                loa, comparison, null, spType)
         String stringResponse = OpenSAMLUtils.getXmlString(request)
         Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
 

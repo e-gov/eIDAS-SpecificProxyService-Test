@@ -52,9 +52,9 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("eIDAS-Node implementations MUST support requests without name identifier formats attribute")
-    def "request authentication without name identifier format: #nameIdFormat"() {
+    def "request authentication without name identifier format"() {
         expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, null)
+        String samlRequest = Steps.getAuthnRequestWithoutNameIdFormat(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM)
         Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
         Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
         Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
@@ -66,11 +66,11 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
         assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
         assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
-        assertEquals("Correct nameIdFormat is returned", "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified", SamlUtils.getSubjectNameIdFormatValue(assertion))
+        assertEquals("Correct nameIdFormat is returned", nameIdFormat, SamlUtils.getSubjectNameIdFormatValue(assertion))
 
         where:
-        familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
-        "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+        nameIdFormat           || familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
+        NameIDType.UNSPECIFIED || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
     }
 
     @Unroll
