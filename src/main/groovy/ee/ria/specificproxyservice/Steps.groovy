@@ -20,7 +20,7 @@ class Steps {
 
         AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestParams(flow.connector.signatureCredential,
                 providerName,
-                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}:${flow.specificProxyService.port}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
                 loa, comparison,nameIdFormat, spType)
@@ -36,7 +36,7 @@ class Steps {
 
         AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestParams(flow.connector.signatureCredential,
                 providerName,
-                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}:${flow.specificProxyService.port}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
                 loa, comparison, null, spType)
@@ -52,7 +52,7 @@ class Steps {
 
         AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestWithOptionalAttributes(flow.connector.signatureCredential,
                 providerName,
-                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}:${flow.specificProxyService.port}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
                 loa, comparison,nameIdFormat, spType)
@@ -68,7 +68,7 @@ class Steps {
 
         AuthnRequest request = new RequestBuilderUtils().buildLegalAuthnRequest(flow.connector.signatureCredential,
                 providerName,
-                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}:${flow.specificProxyService.port}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
                 loa)
