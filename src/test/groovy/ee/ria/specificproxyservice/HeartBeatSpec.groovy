@@ -43,4 +43,13 @@ class HeartBeatSpec extends SpecificProxyServiceSpecification {
                 .body("dependencies[3].status", Matchers.is("UP"))
     }
 
+    @Unroll
+    @Feature("HEALTH_MONITORING_ENDPOINT")
+    @Feature("SECURITY")
+    def "Verify heartbeat response header"() {
+        expect:
+        Response heartBeat = Requests.getHeartbeat(flow)
+        heartBeat.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
+    }
+
 }

@@ -20,6 +20,8 @@ class SpecificProxyServiceSpecification extends Specification {
     Credential signatureCredential
     @Shared
     Credential encryptionCredential
+    @Shared
+    String contentSecurityPolicy = "block-all-mixed-content; default-src 'self'; object-src: 'none'; frame-ancestors 'none';"
 
     def setupSpec() {
         InitializationService.initialize()

@@ -5,6 +5,7 @@ import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.RestAssured
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
+import org.hamcrest.Matchers
 import org.opensaml.saml.saml2.core.Assertion
 import spock.lang.Ignore
 import spock.lang.Unroll
@@ -212,6 +213,17 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
                         .extract().response()
 
         assertEquals("Correct status code is returned", 302, response1.getStatusCode())
+    }
+
+    @Unroll
+    @Feature("CONSENT_VIEW")
+    @Feature("SECURITY")
+    def "Verify consent response header"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
+        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
+        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
+        consentPageResponse.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
     }
 }
 

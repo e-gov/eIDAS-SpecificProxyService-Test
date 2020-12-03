@@ -5,6 +5,7 @@ import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.RestAssured
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
+import org.hamcrest.Matchers
 import org.opensaml.saml.saml2.core.Assertion
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration
 import org.opensaml.saml.saml2.core.NameIDType
@@ -245,5 +246,20 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Status 400 is returned", 400, errorResponse.statusCode())
         assertEquals("Status message is returned", "Support for legal person attributes has been temporarily suspended", errorResponse.body().jsonPath().get("message"))
+    }
+
+    @Unroll
+    @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
+    @Feature("SECURITY")
+    def "Verify proxy response header"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
+        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+
+        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
+        String token = "a"*1001
+
+        Response response2 = Requests.proxyServiceRequest(flow, action, token)
+        response2.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
     }
 }

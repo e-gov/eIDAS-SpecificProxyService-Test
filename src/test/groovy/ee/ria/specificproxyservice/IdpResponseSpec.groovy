@@ -4,6 +4,7 @@ import ee.ria.specificproxyservice.tara.MobileId
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
+import org.hamcrest.Matchers
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
@@ -161,5 +162,17 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", "Invalid state", validateableResponse.getBody().jsonPath().get("message"))
+    }
+
+    @Unroll
+    @Feature("LOGIN_ENDPOINT_LIGHTREQUEST")
+    @Feature("SECURITY")
+    def "Verify IdpResponse response header"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
+        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
+        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+        Response idpResponse = Requests.followRedirect(flow, response.getHeader("location"))
+        idpResponse.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
     }
 }
