@@ -82,6 +82,21 @@ class Requests {
                 .extract().response()
     }
 
+    @Step("TARA request")
+    static Response taraRequest(Flow flow, String requestType, String location) {
+        return given()
+                .filter(flow.cookieFilter)
+                .filter(new AllureRestAssured())
+                .cookie("SESSION", flow.sessionId)
+                .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                .when()
+                .redirects().follow(false)
+                .urlEncodingEnabled(true)
+                .request(requestType, location)
+                .then()
+                .extract().response()
+    }
+
     @Step("{flow.endUser}Follow OpenID Connect Authentication request redirect")
     static Response followTARARedirect(Flow flow, String location) {
         return given()

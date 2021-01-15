@@ -94,8 +94,13 @@ class Steps {
         Response authenticationResponse = Requests.followRedirect(flow, taraUrl)
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location")
-        flow.specificProxyService.setTaraLoginPageUrl(location)
-        return Requests.followRedirect(flow, location)
+        URL locationUrl = new URL(location)
+        String baseUrl = locationUrl.getProtocol() + "://" + (locationUrl.getPort() > 0 ? (":" + locationUrl.getPort()) : "") + locationUrl.getHost()
+        flow.specificProxyService.setTaraBaseUrl(baseUrl)
+        Response authInitResponse = Requests.followRedirect(flow, location)
+        flow.setSessionId(authInitResponse.getCookie("SESSION"))
+        flow.setCsrf(authInitResponse.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
+        return authInitResponse
     }
 
     @Step("Authenticate with MID and follow redirects to consent")

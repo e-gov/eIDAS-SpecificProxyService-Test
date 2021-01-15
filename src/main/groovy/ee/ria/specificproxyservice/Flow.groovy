@@ -12,6 +12,8 @@ class Flow {
     SpecificProxyService specificProxyService
     Connector connector
     CookieFilter cookieFilter
+    String sessionId
+    String csrf
     String endUser=""
 
     Flow(Properties properties) {
@@ -29,7 +31,7 @@ class SpecificProxyService {
     String metadataUrl
     String authenticationRequestUrl
     String consentUrl
-    String taraLoginPageUrl
+    String taraBaseUrl
     String heartbeatUrl
     // @formatter:off
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
