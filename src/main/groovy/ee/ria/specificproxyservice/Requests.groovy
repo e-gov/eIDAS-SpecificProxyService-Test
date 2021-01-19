@@ -131,7 +131,6 @@ class Requests {
         return given()
                 .filter(flow.cookieFilter)
                 .filter(new AllureRestAssured())
-                .cookie("oauth2_authentication_csrf", flow.oauth2_authentication_csrf)
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)

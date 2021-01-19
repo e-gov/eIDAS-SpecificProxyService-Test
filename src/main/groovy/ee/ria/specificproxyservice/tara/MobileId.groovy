@@ -57,9 +57,6 @@ class MobileId {
                     .then()
                     .extract().response()
             if( response.body().jsonPath().get("status") != "PENDING") {
-                if( response.body().jsonPath().get("status") == "COMPLETED") {
-                    flow.setSessionId(response.getCookie("SESSION"))
-                }
                 return response
             }
         }
