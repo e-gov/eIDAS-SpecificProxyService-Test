@@ -36,8 +36,8 @@ class Requests {
                 .extract().response()
     }
 
-    @Step("Open authentication page")
-    static Response getAuthenticationPage(Flow flow, String samlRequest) {
+    @Step("POST to colleagueRequest")
+    static Response colleagueRequest(Flow flow, String samlRequest) {
         Response response =
                 given()
                         .filter(flow.cookieFilter)
@@ -52,14 +52,42 @@ class Requests {
         return response
     }
 
-    @Step("Proxy Service Request")
+    @Step("GET to idpResponse")
+    static Response idpResponse(Flow flow, String url) {
+        Response response =
+                given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .get(url)
+                        .then()
+                        .extract().response()
+        return response
+    }
+
+    @Step("GET to specificProxyResponse")
+    static Response specificProxyResponse(Flow flow, String url) {
+        Response response =
+                given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .get(url)
+                        .then()
+                        .extract().response()
+        return response
+    }
+
+    @Step("POST to proxyServiceRequest")
     static Response proxyServiceRequest(Flow flow, String action, String token) {
         Response response =
                 given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .formParam("token", token)
-
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
                         .when()
                         .post(action)
@@ -68,7 +96,7 @@ class Requests {
         return response
     }
 
-    @Step("TARA redirect Request")
+    @Step("Follow redirect")
     static Response followRedirect(Flow flow, String location) {
         return given()
                 .filter(flow.cookieFilter)
@@ -82,26 +110,13 @@ class Requests {
                 .extract().response()
     }
 
-    @Step("TARA request")
-    static Response taraRequest(Flow flow, String requestType, String location) {
+    @Step("Follow redirect with CSRF cookies")
+    static Response followRedirectWithCsrfCookie(Flow flow, String location) {
         return given()
                 .filter(flow.cookieFilter)
                 .filter(new AllureRestAssured())
-                .cookie("SESSION", flow.sessionId)
-                .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
-                .when()
-                .redirects().follow(false)
-                .urlEncodingEnabled(true)
-                .request(requestType, location)
-                .then()
-                .extract().response()
-    }
-
-    @Step("{flow.endUser}Follow OpenID Connect Authentication request redirect")
-    static Response followTARARedirect(Flow flow, String location) {
-        return given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .cookie("oauth2_authentication_csrf", flow.oauth2_authentication_csrf)
+                .cookie("oauth2_consent_csrf", flow.oauth2_consent_csrf)
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
@@ -111,35 +126,52 @@ class Requests {
                 .extract().response()
     }
 
-    @Step("Consent Submit")
-    static Response consentSubmit(Flow flow, String token) {
+    @Step("Start TARA authentication flow")
+    static Response startAuthenticationFlowInTara(Flow flow, String location) {
+        return given()
+                .filter(flow.cookieFilter)
+                .filter(new AllureRestAssured())
+                .cookie("oauth2_authentication_csrf", flow.oauth2_authentication_csrf)
+                .relaxedHTTPSValidation()
+                .when()
+                .redirects().follow(false)
+                .urlEncodingEnabled(false)
+                .get(location)
+                .then()
+                .extract().response()
+    }
+
+    @Step("Start user consent flow")
+    static Response startConsentFlow(Flow flow, String url) {
         Response response =
                 given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
-                        .queryParam("token", token)
+                        .cookie("SESSION", flow.sessionId)
+                        .formParam("_csrf", flow.csrf)
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
                         .when()
                         .redirects().follow(false)
-                        .get(flow.specificProxyService.fullConsentUrl)
-                        .then()
+                        .post(url)
+                        .then().log().cookies()
                         .extract().response()
         return response
     }
 
-    @Step("Consent Cancel")
-    static Response consentCancel(Flow flow, String token) {
+    @Step("Consent Submit")
+    static Response consentSubmit(Flow flow, String url, Boolean consentGiven) {
         Response response =
                 given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
-                        .queryParam("token", token)
-                        .queryParam("cancel", true)
+                        .queryParam("consent_given", consentGiven)
+                        .cookie("SESSION", flow.sessionId)
+                        .formParam("_csrf", flow.csrf)
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
                         .when()
                         .redirects().follow(false)
-                        .get(flow.specificProxyService.fullConsentUrl)
-                        .then()
+                        .post(url)
+                        .then().log().cookies()
                         .extract().response()
         return response
     }

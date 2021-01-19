@@ -1,20 +1,19 @@
 package ee.ria.specificproxyservice
 
 import groovy.transform.Canonical
-import io.restassured.config.RestAssuredConfig
 import io.restassured.filter.cookie.CookieFilter
 import org.opensaml.security.credential.Credential
 
 @Canonical
 class Flow {
-    RestAssuredConfig sslConfig
     Properties properties
     SpecificProxyService specificProxyService
     Connector connector
     CookieFilter cookieFilter
     String sessionId
     String csrf
-    String endUser=""
+    String oauth2_authentication_csrf
+    String oauth2_consent_csrf
 
     Flow(Properties properties) {
         this.properties = properties
@@ -33,13 +32,11 @@ class SpecificProxyService {
     String consentUrl
     String taraBaseUrl
     String heartbeatUrl
-    // @formatter:off
+
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
     @Lazy fullAuthenticationRequestUrl = "${protocol}://${host}:${port}${authenticationRequestUrl}"
-    @Lazy fullConsentUrl = "${protocol}://${host}:${port}${consentUrl}"
     @Lazy fullheartbeatUrl = "${protocol}://${host}:${port}${heartbeatUrl}"
 
-    // @formatter:on
     SpecificProxyService(Properties properties) {
         this.host = properties."specificproxyservice.host"
         this.port = properties."specificproxyservice.port"
@@ -61,10 +58,7 @@ class Connector {
     String authenticationResponseUrl
     Credential signatureCredential
     Credential encryptionCredential
-    // @formatter:off
-    @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
-    @Lazy fullAuthenticationResponseUrl = "${protocol}://${host}:${port}${authenticationResponseUrl}"
-    // @formatter:on
+
     Connector(Properties properties) {
         this.host = properties."connector.host"
         this.port = properties."connector.port"

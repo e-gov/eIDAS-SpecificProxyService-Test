@@ -2,7 +2,6 @@ package ee.ria.specificproxyservice.tara
 
 
 import ee.ria.specificproxyservice.Flow
-import ee.ria.specificproxyservice.Requests
 import io.qameta.allure.Step
 import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.RestAssured
@@ -21,16 +20,15 @@ class MobileId {
         assertEquals("Correct HTTP status code is returned", 200, submitResponse.statusCode())
         Response pollResponse = pollForAuthentication(flow, flow.specificProxyService.taraBaseUrl + "/auth/mid/poll", pollMillis)
         assertEquals("Correct HTTP status code is returned", 200, pollResponse.statusCode())
-        Response acceptResponse = Requests.taraRequest(flow, "post", flow.specificProxyService.taraBaseUrl + "/auth/accept")
-        assertEquals("Correct HTTP status code is returned", 302, acceptResponse.statusCode())
-        return acceptResponse
+
+        return pollResponse
     }
 
 
     @Step("Submit Mobile-ID login")
     static Response submitMobileIdLogin(Flow flow, String mobileNo, String idCode, String location) {
         return given()
-                .filter(flow.getCookieFilter())
+                .filter(flow.cookieFilter)
                 .filter(new AllureRestAssured())
                 .cookie("SESSION", flow.sessionId)
                 .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
@@ -57,7 +55,6 @@ class MobileId {
                     .when()
                     .get(location)
                     .then()
-                    .log().cookies()
                     .extract().response()
             if( response.body().jsonPath().get("status") != "PENDING") {
                 if( response.body().jsonPath().get("status") == "COMPLETED") {
@@ -68,25 +65,4 @@ class MobileId {
         }
         throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis")
     }
-/*
-    @Step("Cancel Mobile-ID authentication")
-    public static Response cancelAuthentication(Flow flow, String execution) throws InterruptedException {
-
-        Response response = given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
-                .relaxedHTTPSValidation()
-                .redirects().follow(false)
-                .formParam("execution", execution)
-                .formParam("_eventId", "cancel")
-                //.queryParam("client_id", flow.getRelyingParty().getClientId())
-                //.queryParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
-                //.when()
-                //.post(flow.getOpenIDProvider().getLoginUrl())
-                //.then()
-        //.extract().response();
-        return response;
-    }
-
- */
 }

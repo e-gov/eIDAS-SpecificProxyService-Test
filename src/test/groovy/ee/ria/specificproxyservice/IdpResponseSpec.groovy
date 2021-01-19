@@ -1,6 +1,5 @@
 package ee.ria.specificproxyservice
 
-import ee.ria.specificproxyservice.tara.MobileId
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
@@ -26,11 +25,14 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return state error handling"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
-        String[] elements = response.getHeader("location").split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
 
-        Response validateableResponse = Requests.followRedirect(flow, elements[0]+"?"+elements[1]+state)
+        String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
+
+        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+state)
 
         assertEquals("Correct status is returned", statusCode, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", message, validateableResponse.getBody().jsonPath().get("message"))
@@ -47,11 +49,14 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return code error handling"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
-        String[] elements = response.getHeader("location").split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
 
-        Response validateableResponse = Requests.followRedirect(flow, elements[0]+code+elements[2])
+        String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
+
+        Response validateableResponse = Requests.idpResponse(flow, elements[0]+code+elements[2]+"&"+elements[3])
 
         assertEquals("Correct status is returned", statusCode, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", message, validateableResponse.getBody().jsonPath().get("message"))
@@ -68,11 +73,14 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return error handling on double state parameters"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
-        String[] elements = response.getHeader("location").split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
 
-        Response validateableResponse = Requests.followRedirect(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[2])
+        String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
+
+        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[3]+"&"+elements[3])
 
         assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='idpCallbackRequest'. Error count: 1", validateableResponse.getBody().jsonPath().get("message"))
@@ -84,11 +92,14 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return error handling on double code parameters"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
-        String[] elements = response.getHeader("location").split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
 
-        Response validateableResponse = Requests.followRedirect(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[1])
+        String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
+
+        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[1]+"&"+elements[3])
 
         assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='idpCallbackRequest'. Error count: 1", validateableResponse.getBody().jsonPath().get("message"))
@@ -100,12 +111,14 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return ignores unknown parameters"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
 
-        Response validateableResponse = Requests.followRedirect(flow, response.getHeader("location")+"&randomParam=someValue")
+        Response validateableResponse = Requests.idpResponse(flow,  taraAuthenticationResponse.getHeader("location")+"&randomParam=someValue")
 
-        assertEquals("Correct status is returned", 200, validateableResponse.getStatusCode())
+        assertEquals("Correct status is returned", 302, validateableResponse.getStatusCode())
     }
 
     @Unroll
@@ -114,19 +127,19 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC returns usupported error on login"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        String returnUrl = taraLoginPageResponse.body().htmlPath().get("**.find {it.@class == 'link-back-mobile'}.a.@href")
-        String[] elements = returnUrl.split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        String returnUrl = flow.specificProxyService.taraBaseUrl + "/auth/reject"+errorCode
 
-        Response cancelResponse = Requests.backToServiceProvider(flow, elements[0]+"?"+errorCode+"&"+errorMessage+"&"+elements[3])
+        Response cancelResponse = Requests.backToServiceProvider(flow, returnUrl)
 
         assertEquals("Correct status is returned", statusCode, cancelResponse.getStatusCode())
         assertEquals("Correct message is returned", message, cancelResponse.getBody().jsonPath().get("message"))
-        assertEquals("Correct error is returned", error, cancelResponse.getBody().jsonPath().get("errors"))
+        assertEquals("Correct error is returned", error, cancelResponse.getBody().jsonPath().get("error"))
 
         where:
-        errorCode           | errorMessage                        || statusCode || message         || error
-        "error=hacked"      | "error_description=something+fishy" || 500        || "Something went wrong internally. Please consult server logs for further details." || null
+        errorCode            || statusCode || message         || error
+        "?error_code=hacked" || 400        || "authReject.errorCode: the only supported value is: 'user_cancel'" || "Bad Request"
     }
 
     @Unroll
@@ -135,11 +148,17 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC returns supported error on login"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        String returnUrl = taraLoginPageResponse.body().htmlPath().get("**.find {it.@class == 'link-back-mobile'}.a.@href")
-        String[] elements = returnUrl.split('\\?|&')
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Steps.startAuthProcessInTara(flow, specificProxyResponse)
 
-        Response cancelResponse = Requests.backToServiceProvider(flow, elements[0]+"?"+errorCode+"&"+errorMessage+"&"+elements[3])
+        String returnUrl = flow.specificProxyService.taraBaseUrl + "/auth/reject?error_code=user_cancel"
+
+        Response cancelResponse = Requests.backToServiceProvider(flow, returnUrl)
+        String backToSpUrl = cancelResponse.then().extract().response().getHeader("location")
+
+        String[] elements = backToSpUrl.split('\\?|&')
+
+        Response idpResponse =  Requests.idpResponse(flow, elements[0]+"?"+errorCode+"&"+errorMessage+"&"+elements[3])
 
         assertEquals("Correct status is returned", statusCode, cancelResponse.getStatusCode())
 
@@ -154,14 +173,16 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "OIDC return can be used only once"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Requests.followRedirect(flow, response.getHeader("location"))
-        Response validateableResponse = Requests.followRedirect(flow, response.getHeader("location"))
+        Response idpResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
-        assertEquals("Correct message is returned", "Invalid state", validateableResponse.getBody().jsonPath().get("message"))
+        assertEquals("Correct status is returned", 400, idpResponse.getStatusCode())
+        assertEquals("Correct message is returned", "Invalid state", idpResponse.getBody().jsonPath().get("message"))
     }
 
     @Unroll
@@ -170,9 +191,13 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     def "Verify IdpResponse response header"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response response = MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
-        Response idpResponse = Requests.followRedirect(flow, response.getHeader("location"))
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+
+        Response idpResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
+
         idpResponse.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
     }
 }

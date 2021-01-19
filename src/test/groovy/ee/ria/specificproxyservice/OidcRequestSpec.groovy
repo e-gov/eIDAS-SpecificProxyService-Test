@@ -24,7 +24,7 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
     def "Verification of correct OIDC request"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA" , requestLoa)
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
@@ -40,9 +40,9 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         where:
         requestLoa                               || transformedLoa           || defaultLocale     || mainStructure
-        "http://eidas.europa.eu/LoA/low"         || "acr_values=low"         || "&ui_locales=et&" || "scope=openid%20idcard%20mid%20eidas:attribute:person_identifier%20eidas:attribute:family_name%20eidas:attribute:first_name%20eidas:attribute:date_of_birth&response_type=code&client_id="
-        "http://eidas.europa.eu/LoA/substantial" || "acr_values=substantial" || "&ui_locales=et&" || "scope=openid%20idcard%20mid%20eidas:attribute:person_identifier%20eidas:attribute:family_name%20eidas:attribute:first_name%20eidas:attribute:date_of_birth&response_type=code&client_id="
-        "http://eidas.europa.eu/LoA/high"        || "acr_values=high"        || "&ui_locales=et&" || "scope=openid%20idcard%20mid%20eidas:attribute:person_identifier%20eidas:attribute:family_name%20eidas:attribute:first_name%20eidas:attribute:date_of_birth&response_type=code&client_id="
+        "http://eidas.europa.eu/LoA/low"         || "acr_values=low"         || "&ui_locales=et&" || "scope=openid%20idcard%20mid&response_type=code&client_id="
+        "http://eidas.europa.eu/LoA/substantial" || "acr_values=substantial" || "&ui_locales=et&" || "scope=openid%20idcard%20mid&response_type=code&client_id="
+        "http://eidas.europa.eu/LoA/high"        || "acr_values=high"        || "&ui_locales=et&" || "scope=openid%20idcard%20mid&response_type=code&client_id="
 
     }
 
@@ -51,7 +51,7 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
     def "request authentication with optional attributes"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
@@ -61,6 +61,6 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
-        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid%20eidas:attribute:person_identifier%20eidas:attribute:family_name%20eidas:attribute:first_name%20eidas:attribute:date_of_birth&"))
+        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
     }
 }

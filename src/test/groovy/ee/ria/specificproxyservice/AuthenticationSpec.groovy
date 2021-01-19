@@ -30,11 +30,13 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
     def "request authentication with name identifier format: #nameIdFormat"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, nameIdFormat)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
         assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
@@ -55,11 +57,13 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
     def "request authentication without name identifier format"() {
         expect:
         String samlRequest = Steps.getAuthnRequestWithoutNameIdFormat(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
         assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
@@ -78,11 +82,13 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
     def "request authentication with supported comparison: #comparisonLevel and requested LOA: #requestLoa"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", requestLoa, comparisonLevel)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", responseLoa, SamlUtils.getLoaValue(assertion))
 
@@ -96,7 +102,7 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
     def "request authentication with not supported comparison: #comparisonLevel and requested LOA: #requestLoa"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", requestLoa, comparisonLevel)
-        Response response = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response = Requests.colleagueRequest(flow, samlRequest)
 
         assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'text-center'}"))
 

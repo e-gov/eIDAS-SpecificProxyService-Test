@@ -36,11 +36,13 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     def "Successful authentication with Mobile-ID"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
         assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
@@ -59,10 +61,12 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     def "cancel authentication in IDP"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response cancelResponse = Steps.userCancelAndFollowRedirects(flow, taraLoginPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraLoginPageResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Response cancelResponse = Steps.userCancelAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, cancelResponse.getHeader("Location"))
 
-        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(cancelResponse)
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(eidasResponse)
 
         assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
         assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
@@ -79,11 +83,13 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     def "user can deny the usage of personal data"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response consentDeniedResponse = Steps.userDenyConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userDenyConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(consentDeniedResponse)
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(eidasResponse)
 
         assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
         assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)

@@ -36,7 +36,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on ProxyServiceRequest with invalid token: #token"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
 
@@ -58,7 +58,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on ProxyServiceRequest with empty token: #token"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
 
@@ -77,7 +77,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on ProxyServiceRequest with invalid token format"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
 
@@ -97,7 +97,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on missing token"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
 
@@ -122,7 +122,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on over max length token"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = "a"*1001
@@ -139,7 +139,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Error handling on double token"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
@@ -166,11 +166,13 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "request authentication with supported SPType: #spType"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
-        Response taraLoginPageResponse = Steps.startAuthProcessFollowRedirectsToTara(flow, samlRequest)
-        Response consentPageResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraLoginPageResponse)
-        Response authenticationResponse = Steps.userConsentAndFollowRedirects(flow, consentPageResponse)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
-        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(authenticationResponse, flow.connector.encryptionCredential)
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
         assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
@@ -190,7 +192,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
 
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
@@ -220,7 +222,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
 
-        Response response = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response = Requests.colleagueRequest(flow, samlRequest)
 
         assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'sub-title'}").toString())
 
@@ -233,20 +235,13 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_LEGAL_PERSON")
-    @Feature("TECHNICAL_ERRORS")
-    def "request authentication with legal attributes is currently not supported"() {
+    def "request authentication with legal attributes"() {
         expect:
         String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
-        Response response = Requests.getAuthenticationPage(flow, samlRequest)
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
 
-        String action = response.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
-        String token = response.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
-
-        Response errorResponse = Requests.proxyServiceRequest(flow, action, token)
-
-        assertEquals("Status 400 is returned", 400, errorResponse.statusCode())
-        assertEquals("Status message is returned", "Support for legal person attributes has been temporarily suspended", errorResponse.body().jsonPath().get("message"))
-    }
+        assertEquals("Status 302 is returned", 302, specificProxyResponse.statusCode())
+     }
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
@@ -254,7 +249,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     def "Verify proxy response header"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
-        Response response1 = Requests.getAuthenticationPage(flow, samlRequest)
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = "a"*1001
