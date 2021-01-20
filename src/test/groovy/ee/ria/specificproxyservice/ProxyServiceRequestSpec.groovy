@@ -168,8 +168,8 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
@@ -235,13 +235,23 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_LEGAL_PERSON")
-    def "request authentication with legal attributes"() {
+    def "request authentication with minimal legal attributes"() {
         expect:
         String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
 
         assertEquals("Status 302 is returned", 302, specificProxyResponse.statusCode())
      }
+
+    @Unroll
+    @Feature("AUTHENTICATION_REQUEST_LEGAL_PERSON")
+    def "request authentication with optional legal attributes"() {
+        expect:
+        String samlRequest = Steps.getOptionalLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+
+        assertEquals("Status 302 is returned", 302, specificProxyResponse.statusCode())
+    }
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")

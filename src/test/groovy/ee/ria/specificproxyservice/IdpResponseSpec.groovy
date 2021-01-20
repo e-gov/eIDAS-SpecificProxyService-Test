@@ -27,8 +27,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
@@ -51,8 +51,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
@@ -75,8 +75,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
@@ -94,8 +94,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
@@ -113,8 +113,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         Response validateableResponse = Requests.idpResponse(flow,  taraAuthenticationResponse.getHeader("location")+"&randomParam=someValue")
 
@@ -175,8 +175,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Response idpResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
@@ -193,8 +193,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
         Response idpResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
 

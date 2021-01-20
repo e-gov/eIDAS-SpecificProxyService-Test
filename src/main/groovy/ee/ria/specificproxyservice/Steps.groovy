@@ -59,10 +59,26 @@ class Steps {
         return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
     }
 
-    @Step("Create Legal Person authentication request")
+    @Step("Create Legal Person authentication request with minimal attributes")
     static String getLegalPersonAuthnRequest(Flow flow, String providerName, String loa = LOA_HIGH) {
 
         AuthnRequest request = new RequestBuilderUtils().buildLegalAuthnRequest(flow.connector.signatureCredential,
+                providerName,
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
+                loa)
+        String stringResponse = OpenSAMLUtils.getXmlString(request)
+        Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
+
+        SamlSignatureUtils.validateSamlReqSignature(stringResponse)
+        return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
+    }
+
+    @Step("Create Legal Person authentication request with optional attributes")
+    static String getOptionalLegalPersonAuthnRequest(Flow flow, String providerName, String loa = LOA_HIGH) {
+
+        AuthnRequest request = new RequestBuilderUtils().buildOptionalLegalAuthnRequest(flow.connector.signatureCredential,
                 providerName,
                 "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
@@ -82,17 +98,13 @@ class Steps {
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
 
-        Response response2 = Requests.proxyServiceRequest(flow, action, token)
-        response2.then().statusCode(302)
-        return response2
+        return Requests.proxyServiceRequest(flow, action, token)
     }
 
     @Step("Finish authentication flow in eIDAS node")
     static Response finishAuthProcessInEidasNode(Flow flow, String url) {
         Response response1 = Requests.idpResponse(flow, url)
-        Response response2 = Requests.specificProxyResponse(flow, response1.getHeader("Location"))
-        response2.then().statusCode(200)
-        return response2
+        return Requests.specificProxyResponse(flow, response1.getHeader("Location"))
     }
 
     @Step("Start authentication flow in TARA")
@@ -113,33 +125,38 @@ class Steps {
 
     @Step("Authenticate with MID and follow redirects to consent")
     static Response authenticateWithMidAndFollowRedirects(Flow flow, Response taraLoginPageResponse) {
-        return MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+        MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+        return Requests.submitAuthenticationAccept(flow, flow.specificProxyService.taraBaseUrl + "/auth/accept")
+    }
+
+    @Step("Display and select legal entity")
+    static Response selectLegalEntity(Flow flow, Response midAuthAcceptResponse, String legalPersonId) {
+        Response response = Requests.submitLegalPersonInit(flow, flow.specificProxyService.taraBaseUrl + midAuthAcceptResponse.getHeader("location"))
+        flow.setCsrf(response.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
+        Requests.getLegalPersonList(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson")
+        return Requests.selectLegalPerson(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson/confirm", legalPersonId)
     }
 
     @Step("User consents with authentication")
-    static Response userConsentAndFollowRedirects(Flow flow) {
-        Response response = Requests.startConsentFlow(flow, flow.specificProxyService.taraBaseUrl + "/auth/accept")
+    static Response userConsentAndFollowRedirects(Flow flow, Response response) {
+        Response response1 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
+        flow.setOauth2_consent_csrf(response1.getCookie("oauth2_consent_csrf"))
+        Requests.followRedirect(flow, response1.getHeader("location"))
 
-        Response response2 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
-        flow.setOauth2_consent_csrf(response2.getCookie("oauth2_consent_csrf"))
-        Requests.followRedirect(flow, response2.getHeader("location"))
+        Response response2 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", true)
 
-        Response response1 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", true)
-
-        return Requests.followRedirectWithCsrfCookie(flow, response1.getHeader("location"))
+        return Requests.followRedirectWithCsrfCookie(flow, response2.getHeader("location"))
     }
 
     @Step("User do not consent with authentication")
-    static Response userDenyConsentAndFollowRedirects(Flow flow) {
-        Response response = Requests.startConsentFlow(flow, flow.specificProxyService.taraBaseUrl + "/auth/accept")
+    static Response userDenyConsentAndFollowRedirects(Flow flow, Response response) {
+        Response response1 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
+        flow.setOauth2_consent_csrf(response1.getCookie("oauth2_consent_csrf"))
+        Requests.followRedirect(flow, response1.getHeader("location"))
 
-        Response response2 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
-        flow.setOauth2_consent_csrf(response2.getCookie("oauth2_consent_csrf"))
-        Requests.followRedirect(flow, response2.getHeader("location"))
+        Response response2 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", false)
 
-        Response response1 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", false)
-
-        return Requests.followRedirectWithCsrfCookie(flow, response1.getHeader("location"))
+        return Requests.followRedirectWithCsrfCookie(flow, response2.getHeader("location"))
     }
 
     @Step("User cancels authentication")

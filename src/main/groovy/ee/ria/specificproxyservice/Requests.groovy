@@ -10,7 +10,7 @@ import static io.restassured.RestAssured.given
 import static io.restassured.config.EncoderConfig.encoderConfig
 
 class Requests {
-    @Step("Get metadata")
+    @Step("GET metadata")
     static String getMetadataBody(Flow flow) {
         return given()
                 .config(config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8")))
@@ -23,7 +23,7 @@ class Requests {
                 .extract().body().asString()
     }
 
-    @Step("Get heartbeat")
+    @Step("GET heartbeat")
     static Response getHeartbeat(Flow flow) {
         return given()
                 .config(config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8")))
@@ -38,8 +38,7 @@ class Requests {
 
     @Step("POST to colleagueRequest")
     static Response colleagueRequest(Flow flow, String samlRequest) {
-        Response response =
-                given()
+        return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .formParam("SAMLRequest", samlRequest)
@@ -49,13 +48,11 @@ class Requests {
                         .post(flow.specificProxyService.fullAuthenticationRequestUrl)
                         .then()
                         .extract().response()
-        return response
     }
 
     @Step("GET to idpResponse")
     static Response idpResponse(Flow flow, String url) {
-        Response response =
-                given()
+        return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
@@ -64,13 +61,11 @@ class Requests {
                         .get(url)
                         .then()
                         .extract().response()
-        return response
     }
 
     @Step("GET to specificProxyResponse")
     static Response specificProxyResponse(Flow flow, String url) {
-        Response response =
-                given()
+        return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
@@ -78,13 +73,11 @@ class Requests {
                         .get(url)
                         .then()
                         .extract().response()
-        return response
     }
 
     @Step("POST to proxyServiceRequest")
     static Response proxyServiceRequest(Flow flow, String action, String token) {
-        Response response =
-                given()
+        return  given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .formParam("token", token)
@@ -93,7 +86,6 @@ class Requests {
                         .post(action)
                         .then()
                         .extract().response()
-        return response
     }
 
     @Step("Follow redirect")
@@ -140,10 +132,9 @@ class Requests {
                 .extract().response()
     }
 
-    @Step("Start user consent flow")
-    static Response startConsentFlow(Flow flow, String url) {
-        Response response =
-                given()
+    @Step("Submit authentication accept")
+    static Response submitAuthenticationAccept(Flow flow, String url) {
+         return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .cookie("SESSION", flow.sessionId)
@@ -152,15 +143,57 @@ class Requests {
                         .when()
                         .redirects().follow(false)
                         .post(url)
-                        .then().log().cookies()
+                        .then()
                         .extract().response()
-        return response
+    }
+
+    @Step("Init legal person selection")
+    static Response submitLegalPersonInit(Flow flow, String url) {
+        return given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .cookie("SESSION", flow.sessionId)
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .get(url)
+                        .then()
+                        .extract().response()
+    }
+
+    @Step("Retrieve legal person representation list")
+    static Response getLegalPersonList(Flow flow, String url) {
+        return given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .cookie("SESSION", flow.sessionId)
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .get(url)
+                        .then()
+                        .extract().response()
+    }
+
+    @Step("Submit legal person selection")
+    static Response selectLegalPerson(Flow flow, String url, String legalPersonId) {
+        return given()
+                        .filter(flow.cookieFilter)
+                        .filter(new AllureRestAssured())
+                        .cookie("SESSION", flow.sessionId)
+                        .formParam("_csrf", flow.csrf)
+                        .formParam("legal_person_identifier", legalPersonId)
+                        .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
+                        .when()
+                        .redirects().follow(false)
+                        .post(url)
+                        .then()
+                        .extract().response()
     }
 
     @Step("Consent Submit")
     static Response consentSubmit(Flow flow, String url, Boolean consentGiven) {
-        Response response =
-                given()
+        return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .queryParam("consent_given", consentGiven)
@@ -172,13 +205,11 @@ class Requests {
                         .post(url)
                         .then().log().cookies()
                         .extract().response()
-        return response
     }
 
     @Step("Return to service provider without authentication")
     static Response backToServiceProvider(Flow flow, String url) {
-        Response response =
-                given()
+        return given()
                         .filter(flow.cookieFilter)
                         .filter(new AllureRestAssured())
                         .config(RestAssured.config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8"))).relaxedHTTPSValidation()
@@ -187,6 +218,5 @@ class Requests {
                         .get(url)
                         .then()
                         .extract().response()
-        return response
     }
 }

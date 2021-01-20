@@ -33,13 +33,13 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     @Feature("CONSENT_ENDPOINT_USER_AGREE")
-    def "Successful authentication with Mobile-ID"() {
+    def "Successful natural person authentication with Mobile-ID"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
@@ -62,7 +62,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
-        Response taraLoginPageResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Steps.startAuthProcessInTara(flow, specificProxyResponse)
         Response cancelResponse = Steps.userCancelAndFollowRedirects(flow)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, cancelResponse.getHeader("Location"))
 
@@ -85,8 +85,8 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response taraAuthenticationResponse = Steps.userDenyConsentAndFollowRedirects(flow)
+        Response midStatusResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response taraAuthenticationResponse = Steps.userDenyConsentAndFollowRedirects(flow, midStatusResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(eidasResponse)
@@ -99,4 +99,116 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
         "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
       }
+
+    @Unroll
+    @Feature("Estonian authentication means return LOA_HIGH")
+    @Feature("AUTHENTICATION_REQUEST_OK")
+    @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTTOKEN")
+    @Feature("AUTHENTICATION_RESPONSE_WITH_LIGHTTOKEN")
+    @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTRESPONSE_SUCCESS")
+    @Feature("LOGIN_ENDPOINT_SUCCESSFUL_LOGIN")
+    @Feature("LOGIN_ENDPOINT_LIGHTREQUEST")
+    @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
+    @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
+    @Feature("CONSENT_ENDPOINT_USER_AGREE")
+    def "Successful legal person authentication with Mobile-ID LegalPersonId:#legalPersonIdentifier"() {
+        expect:
+        String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
+
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
+
+        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct legal name is returned", legalName, SamlUtils.getAttributeValue(assertion, "LegalName"))
+        assertEquals("Correct legal person identifier is returned", "EE/CA/" + legalPersonIdentifier, SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
+
+        where:
+        legalName            || legalPersonIdentifier || loa_level
+        "täisühing VAVILOV"  || "10910878"      || "http://eidas.europa.eu/LoA/high"
+        "OÜ Kaader 6"        || "11136145"      || "http://eidas.europa.eu/LoA/high"
+        "Abilux Service MTÜ" || "80068006"      || "http://eidas.europa.eu/LoA/high"
+    }
+
+    @Unroll
+    @Feature("Estonian authentication means return LOA_HIGH")
+    @Feature("AUTHENTICATION_REQUEST_OK")
+    @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTTOKEN")
+    @Feature("AUTHENTICATION_RESPONSE_WITH_LIGHTTOKEN")
+    @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTRESPONSE_SUCCESS")
+    @Feature("LOGIN_ENDPOINT_SUCCESSFUL_LOGIN")
+    @Feature("LOGIN_ENDPOINT_LIGHTREQUEST")
+    @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
+    @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
+    @Feature("CONSENT_ENDPOINT_USER_AGREE")
+    def "not supported optional attributes requested on legal person authentication"() {
+        expect:
+        String samlRequest = Steps.getOptionalLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
+
+        Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
+
+        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct legal name is returned", legalName, SamlUtils.getAttributeValue(assertion, "LegalName"))
+        assertEquals("Correct legal person identifier is returned", "EE/CA/" + legalPersonIdentifier, SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
+
+        where:
+        legalName            || legalPersonIdentifier || loa_level
+        "OÜ Kaader 6"        || "11136145"      || "http://eidas.europa.eu/LoA/high"
+    }
+
+    @Unroll
+    @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
+    @Feature("CONSENT_ENDPOINT_USER_CANCEL")
+    def "User denies consent on legal person authentication with Mobile-ID"() {
+        expect:
+        String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response taraAuthenticationResponse = Steps.userDenyConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
+
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(eidasResponse)
+
+        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
+        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
+        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
+
+        where:
+        legalPersonIdentifier | samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "10910878" | "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
+    }
+
+    @Unroll
+    @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
+    @Feature("PROCESS_ERRORS")
+    def "cancel legal person authentication in IDP"() {
+        expect:
+        String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+        Steps.startAuthProcessInTara(flow, specificProxyResponse)
+        Response cancelResponse = Steps.userCancelAndFollowRedirects(flow)
+        Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, cancelResponse.getHeader("Location"))
+
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(eidasResponse)
+
+        assertEquals("The request could not be performed due to an error on the part of the requester.", samlStatusCode, samlResponseObj.status.statusCode.value)
+        assertEquals("The SAML responder or SAML authority is able to process the request but has chosen not to respond.", samlSubStatusCode, samlResponseObj.status.statusCode.statusCode.value)
+        assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
+
+        where:
+        samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
+    }
 }
