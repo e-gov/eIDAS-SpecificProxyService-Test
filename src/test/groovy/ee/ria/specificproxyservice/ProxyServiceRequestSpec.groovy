@@ -224,13 +224,12 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         Response response = Requests.colleagueRequest(flow, samlRequest)
 
-        assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'sub-title'}").toString())
-
+        assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'text-center'}").toString())
 
         where:
         spType         || errorResponse
-        "notProvided"  || "An unexpected error has occurred"
-        ""             || "An unexpected error has occurred"
+        "notProvided"  || "202002 - Invalid SAML Request token."
+        ""             || "202002 - Invalid SAML Request token."
     }
 
     @Unroll
