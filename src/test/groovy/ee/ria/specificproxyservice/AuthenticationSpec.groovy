@@ -98,7 +98,7 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
     }
 
     @Unroll
-    @Feature("To support reuse of eIDAS-Node infrastructure for non-notified eID schemes, Member States MAY support other URIs as Authentication Context")
+    @Feature("EXACT comparision is allowed for not notified LOAs only")
     def "request authentication with not supported comparison: #comparisonLevel and requested LOA: #requestLoa"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", requestLoa, comparisonLevel)
@@ -108,7 +108,23 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
         where:
         comparisonLevel                               | requestLoa                                   || errorResponse
-        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "003007 - value of Level of Assurance is not supported"
-        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/NotNotified/LoA/low" || "003007 - value of Level of Assurance is not supported"
+        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "202002 - Invalid SAML Request token."
+    }
+
+    @Unroll
+    @Feature("EXACT comparision is required for not notified LOAs")
+    def "request authentication with required comparison for not notified schemas: #comparisonLevel and requested LOA: #requestLoa"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", requestLoa, comparisonLevel)
+        Response response = Requests.colleagueRequest(flow, samlRequest)
+
+        org.opensaml.saml.saml2.core.Response samlResponseObj = SamlResponseUtils.getSamlResponseFromResponse(response)
+
+        assertEquals("The request could not be performed due to an error on the part of the requester.", statusCode, samlResponseObj.status.statusCode.value)
+        assertEquals("Reason for unsuccessful authentication.", errorMessage, samlResponseObj.status.statusMessage.message)
+
+        where:
+        comparisonLevel                               | requestLoa                                   || errorMessage || statusCode
+        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/NotNotified/LoA/low" || "202015 - invalid value for Level of Assurance" || "urn:oasis:names:tc:SAML:2.0:status:Requester"
     }
 }
