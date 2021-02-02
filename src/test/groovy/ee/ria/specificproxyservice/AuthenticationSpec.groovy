@@ -127,4 +127,35 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         comparisonLevel                               | requestLoa                                   || errorMessage || statusCode
         AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/NotNotified/LoA/low" || "202015 - invalid value for Level of Assurance" || "urn:oasis:names:tc:SAML:2.0:status:Requester"
     }
+
+    @Unroll
+    @Feature("AUTHENTICATION_PROCESS_TYPE")
+    def "request authentication with missing natural person identity attributes"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequestWithMissingNaturalExtensions(flow, "DEMO-SP-CA")
+        Response response = Requests.colleagueRequest(flow, samlRequest)
+
+        assertEquals("Error is returned", "203021 - incomplete attribute set", response.body().htmlPath().get("**.find {it.@class == 'text-center'}"))
+    }
+
+    @Unroll
+    @Feature("AUTHENTICATION_PROCESS_TYPE")
+    def "request authentication with missing legal person identity attributes"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequestWithMissingLegalExtensions(flow, "DEMO-SP-CA")
+        Response response = Requests.colleagueRequest(flow, samlRequest)
+
+        assertEquals("Error is returned", "203021 - incomplete attribute set", response.body().htmlPath().get("**.find {it.@class == 'text-center'}"))
+    }
+
+    @Unroll
+    @Feature("AUTHENTICATION_PROCESS_TYPE")
+    def "request authentication with legal and natural identity attributes"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequestWithNaturalAndLegalExtensions(flow, "DEMO-SP-CA")
+        Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
+
+        assertEquals("400 status code is returned", 400, specificProxyResponse.statusCode())
+        assertEquals("Proper message is returned", "Request may not contain both legal person and natural person attributes", specificProxyResponse.getBody().jsonPath().get("message"))
+    }
 }

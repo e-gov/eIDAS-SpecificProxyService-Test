@@ -48,7 +48,7 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("IDP_START_AUTH_SCOPES_ATTR")
-    def "request authentication with optional attributes"() {
+    def "request authentication with standard extensions do not require additional scopes"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response response1 = Requests.colleagueRequest(flow, samlRequest)
@@ -62,5 +62,41 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
         assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
+    }
+
+    @Unroll
+    @Feature("IDP_START_AUTH_SCOPES_ATTR")
+    def "request authentication with additional extensions which are ignored"() {
+        expect:
+        String samlRequest = Steps.getAuthnRequestWithOptionalAttributes(flow, "DEMO-SP-CA")
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
+
+        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
+        String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
+
+        Response response2 = Requests.proxyServiceRequest(flow, action, token)
+        response2.then().statusCode(302)
+
+        String taraUrl =  response2.then().extract().response().getHeader("location")
+
+        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
+    }
+
+    @Unroll
+    @Feature("IDP_START_AUTH_SCOPES_ATTR")
+    def "request authentication with legal attributes requires legalperson scope"() {
+        expect:
+        String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
+
+        String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
+        String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
+
+        Response response2 = Requests.proxyServiceRequest(flow, action, token)
+        response2.then().statusCode(302)
+
+        String taraUrl =  response2.then().extract().response().getHeader("location")
+
+        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid%20legalperson&"))
     }
 }

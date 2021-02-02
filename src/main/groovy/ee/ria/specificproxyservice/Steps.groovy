@@ -27,6 +27,53 @@ class Steps {
         return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
     }
 
+    @Step("Create Natural Person authentication request with missing extensions")
+    static String getAuthnRequestWithMissingNaturalExtensions(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String nameIdFormat = NameIDType.UNSPECIFIED, String spType = "public") {
+
+        AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestWithMissingNaturalExtensions(flow.connector.signatureCredential,
+                providerName,
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
+                loa, comparison,nameIdFormat, spType)
+        String stringResponse = OpenSAMLUtils.getXmlString(request)
+        Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
+
+        SamlSignatureUtils.validateSamlReqSignature(stringResponse)
+        return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
+    }
+
+    @Step("Create legal Person authentication request with missing extensions")
+    static String getAuthnRequestWithMissingLegalExtensions(Flow flow, String providerName, String loa = LOA_HIGH) {
+        AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestWithMissingLegalExtensions(flow.connector.signatureCredential,
+                providerName,
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
+                loa)
+        String stringResponse = OpenSAMLUtils.getXmlString(request)
+        Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
+
+        SamlSignatureUtils.validateSamlReqSignature(stringResponse)
+        return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
+    }
+
+    @Step("Create authentication request with natural and legal person extensions")
+    static String getAuthnRequestWithNaturalAndLegalExtensions(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String nameIdFormat = NameIDType.UNSPECIFIED, String spType = "public") {
+
+        AuthnRequest request = new RequestBuilderUtils().buildAuthnRequestWithNaturalAndLegalExtensions(flow.connector.signatureCredential,
+                providerName,
+                "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
+                "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
+                loa, comparison,nameIdFormat, spType)
+        String stringResponse = OpenSAMLUtils.getXmlString(request)
+        Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
+
+        SamlSignatureUtils.validateSamlReqSignature(stringResponse)
+        return new String(Base64.getEncoder().encode(stringResponse.getBytes()))
+    }
+
     @Step("Create Natural Person authentication request without nameIdFormat attribute")
     static String getAuthnRequestWithoutNameIdFormat(Flow flow, String providerName, String loa = LOA_HIGH, AuthnContextComparisonTypeEnumeration comparison = AuthnContextComparisonTypeEnumeration.MINIMUM, String spType = "public") {
 
@@ -92,8 +139,8 @@ class Steps {
     }
 
     @Step("Start authentication flow in eIDAS node")
-    static Response startAuthProcessInEidasNode(Flow flow, String url) {
-        Response response1 = Requests.colleagueRequest(flow, url)
+    static Response startAuthProcessInEidasNode(Flow flow, String samlRequest) {
+        Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
         String token = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.input[0].@value")
