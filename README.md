@@ -12,7 +12,9 @@ Tests for eIDAS proxy component (both eIDAS standard component and Estonia speci
 
 `git clone https://github.com/e-gov/eIDAS-SpecificProxyService-Test.git`
 
-4. Configure the properties file. 
+## Configuring the test
+
+1. Configure the properties file. 
    application.properties file needs to be either in `src/test/resources` directory or its location configured with .env file `src/test/resources`.
    Example of .env file:
 ```
@@ -51,11 +53,13 @@ Description of values:
 | connector.truststore.file | tls-truststore.p12  | TLS truststore. | 
 | connector.truststore.password | changeit  | TLS truststore password. | 
 
-5. To run the tests execute:
+## Execute tests
+
+1. To run the tests execute:
 
 `./mvnw clean test`
 
-6. Results are present in:
+2. Results are present in:
 
 a) Surefire plugin generates reports in ../target/surefire-reports folder.
 b) For a comprehensive test Allure is required ([instructions for download.](https://docs.qameta.io/allure/#_installing_a_commandline)). To generate the report execute:
@@ -63,6 +67,7 @@ b) For a comprehensive test Allure is required ([instructions for download.](htt
 `allure serve .../eidas-connector-test/allure-results/`
 
 ##To see Allure report after running tests in IntelliJ 
+
 Configure correct Allure results directory in IntelliJ in order to view Allure report when running tests from IntelliJ
 `Run-> Edit configurations-> Templates-> JUnit-> VM Options: -ea -Dallure.results.directory=$ProjectFileDir$/target/allure-results`
 
