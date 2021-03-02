@@ -17,15 +17,18 @@ Tests for eIDAS proxy component (both eIDAS standard component and Estonia speci
 1. Configure the properties file. 
    application.properties file needs to be either in `src/test/resources` directory or its location configured with .env file `src/test/resources`.
    Example of .env file:
+   
 ```
 configuration_base_path=/home/me/IdeaProjects/specificproxy-configuration
 configuration_path=dev-local
 ```   
+
 The example application.properties file with values are given ../src/test/resource/sample_application.properties
 
 Description of values:
 
 **specificproxyservice** - configuration parameters for the SUT (Estonian implementation of eIDAS proxy service)
+
 **connector** - configuration parameters for tests who advertise themselves as DEMO-SP-CA connector.
 
 | Parameter | Default |  Description |
@@ -53,22 +56,24 @@ Description of values:
 | connector.truststore.file | tls-truststore.p12  | TLS truststore. | 
 | connector.truststore.password | changeit  | TLS truststore password. | 
 
-## Execute tests
+## Execute tests and generate report
 
 1. To run the tests execute:
 
 `./mvnw clean test`
 
-2. Results are present in:
+2. To check the results:
 
 a) Surefire plugin generates reports in ../target/surefire-reports folder.
-b) For a comprehensive test Allure is required ([instructions for download.](https://docs.qameta.io/allure/#_installing_a_commandline)). To generate the report execute:
+
+b) For a comprehensive report, Allure is required ([instructions for download.](https://docs.qameta.io/allure/#_installing_a_commandline)). To generate the report execute:
 
 `allure serve .../eidas-connector-test/allure-results/`
 
-##To see Allure report after running tests in IntelliJ 
+## To see Allure report after running tests in IntelliJ 
 
 Configure correct Allure results directory in IntelliJ in order to view Allure report when running tests from IntelliJ
+
 `Run-> Edit configurations-> Templates-> JUnit-> VM Options: -ea -Dallure.results.directory=$ProjectFileDir$/target/allure-results`
 
 And delete all existing run configurations
