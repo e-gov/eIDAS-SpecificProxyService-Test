@@ -3,10 +3,12 @@ package ee.ria.specificproxyservice
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
+import org.hamcrest.Matcher
 import org.opensaml.saml.saml2.core.Assertion
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertThat
 
 class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     public static final String FN_DATE = "DateOfBirth"
@@ -100,7 +102,6 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
       }
 
-    @Unroll
     @Feature("Estonian authentication means return LOA_HIGH")
     @Feature("AUTHENTICATION_REQUEST_OK")
     @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTTOKEN")
@@ -111,30 +112,24 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     @Feature("CONSENT_ENDPOINT_USER_AGREE")
-    def "Successful legal person authentication with Mobile-ID LegalPersonId:#legalPersonIdentifier"() {
+    def "Successful legal person authentication with Mobile-ID"() {
         expect:
         String samlRequest = Steps.getLegalPersonAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response getLegalEntityListResponse = Steps.getLegalEntityList(flow, midAuthAcceptResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct legal name is returned", legalName, SamlUtils.getAttributeValue(assertion, "LegalName"))
-        assertEquals("Correct legal person identifier is returned", "EE/CA/" + legalPersonIdentifier, SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
-
-        where:
-        legalName            || legalPersonIdentifier || loa_level
-        "täisühing VAVILOV"  || "10910878"      || "http://eidas.europa.eu/LoA/high"
-        "OÜ Kaader 6"        || "11136145"      || "http://eidas.europa.eu/LoA/high"
-        "Abilux Service MTÜ" || "80068006"      || "http://eidas.europa.eu/LoA/high"
+        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
+        assertThat("Either legal name from dev or test business register", SamlUtils.getAttributeValue(assertion, "LegalName"), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg"))
+        assertEquals("Correct legal person identifier is returned", "EE/CA/" + getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
     }
 
-    @Unroll
     @Feature("Estonian authentication means return LOA_HIGH")
     @Feature("AUTHENTICATION_REQUEST_OK")
     @Feature("AUTHENTICATION_RESPONSE_CREATE_LIGHTTOKEN")
@@ -151,19 +146,16 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response getLegalEntityListResponse = Steps.getLegalEntityList(flow, midAuthAcceptResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct legal name is returned", legalName, SamlUtils.getAttributeValue(assertion, "LegalName"))
-        assertEquals("Correct legal person identifier is returned", "EE/CA/" + legalPersonIdentifier, SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
-
-        where:
-        legalName            || legalPersonIdentifier || loa_level
-        "OÜ Kaader 6"        || "11136145"      || "http://eidas.europa.eu/LoA/high"
+        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
+        assertThat("Either legal name from dev or test business register", SamlUtils.getAttributeValue(assertion, "LegalName"), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg"))
+        assertEquals("Correct legal person identifier is returned", "EE/CA/" + getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
     }
 
     @Unroll
@@ -175,7 +167,8 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
-        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, midAuthAcceptResponse, legalPersonIdentifier)
+        Response getLegalEntityListResponse = Steps.getLegalEntityList(flow, midAuthAcceptResponse)
+        Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
         Response taraAuthenticationResponse = Steps.userDenyConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
@@ -186,8 +179,8 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
 
         where:
-        legalPersonIdentifier | samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
-        "10910878" | "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
+        samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
     }
 
     @Unroll

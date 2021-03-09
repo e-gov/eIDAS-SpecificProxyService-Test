@@ -176,12 +176,16 @@ class Steps {
         return Requests.submitAuthenticationAccept(flow, flow.specificProxyService.taraBaseUrl + "/auth/accept")
     }
 
-    @Step("Display and select legal entity")
-    static Response selectLegalEntity(Flow flow, Response midAuthAcceptResponse, String legalPersonId) {
+    @Step("Select legal entity")
+    static Response selectLegalEntity(Flow flow, String legalPersonId) {
+        return Requests.selectLegalPerson(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson/confirm", legalPersonId)
+    }
+
+    @Step("Display legal entity list")
+    static Response getLegalEntityList(Flow flow, Response midAuthAcceptResponse) {
         Response response = Requests.submitLegalPersonInit(flow, flow.specificProxyService.taraBaseUrl + midAuthAcceptResponse.getHeader("location"))
         flow.setCsrf(response.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
-        Requests.getLegalPersonList(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson")
-        return Requests.selectLegalPerson(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson/confirm", legalPersonId)
+        return Requests.getLegalPersonList(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson")
     }
 
     @Step("User consents with authentication")
