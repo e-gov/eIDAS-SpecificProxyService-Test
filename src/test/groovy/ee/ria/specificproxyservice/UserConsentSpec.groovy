@@ -62,8 +62,8 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct family name is returned", familyName, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-surname'}").toString().trim())
         assertEquals("Correct first name is returned", firstName, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-given-name'}").toString().trim())
         assertEquals("Correct date of birth is returned", dateOfBirth, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-date-of-birth'}").toString().trim())
-        assertEquals("Correct legal person name is returned", getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-name'}").toString().trim())
-        assertThat("Either legal name from dev or test business register", consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-identifier'}").toString().trim(), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg"))
+        assertEquals("Correct legal person identifier is returned", getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-identifier'}").toString().trim())
+        assertThat("Correct legal person name from dev or test business register is returned", consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-name'}").toString().trim(), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg"))
 
         where:
         spName       || familyName                   || firstName  || personalNumber || dateOfBirth
