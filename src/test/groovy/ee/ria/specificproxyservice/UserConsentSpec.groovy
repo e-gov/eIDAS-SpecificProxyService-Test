@@ -52,7 +52,7 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
         Response getLegalEntityListResponse = Steps.getLegalEntityList(flow, midAuthAcceptResponse)
         Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
-
+        String legalName = getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalName")
         Response response2 = Requests.followRedirectWithCsrfCookie(flow, legalPersonSelectionResponse.getHeader("location"))
         flow.setOauth2_consent_csrf(response2.getCookie("oauth2_consent_csrf"))
 
@@ -63,7 +63,7 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct first name is returned", firstName, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-given-name'}").toString().trim())
         assertEquals("Correct date of birth is returned", dateOfBirth, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-date-of-birth'}").toString().trim())
         assertEquals("Correct legal person identifier is returned", getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-identifier'}").toString().trim())
-        assertThat("Correct legal person name from dev or test business register is returned", consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-name'}").toString().trim(), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg"))
+        assertEquals("Correct legal person name from dev or test business register is returned", consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-name'}").toString().trim(), legalName)
 
         where:
         spName       || familyName                   || firstName  || personalNumber || dateOfBirth
