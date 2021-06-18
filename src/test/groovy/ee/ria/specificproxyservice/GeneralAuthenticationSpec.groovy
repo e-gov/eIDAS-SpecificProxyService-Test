@@ -3,12 +3,10 @@ package ee.ria.specificproxyservice
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
-import org.hamcrest.Matcher
 import org.opensaml.saml.saml2.core.Assertion
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertThat
 
 class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     public static final String FN_DATE = "DateOfBirth"
@@ -149,13 +147,14 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
         Response getLegalEntityListResponse = Steps.getLegalEntityList(flow, midAuthAcceptResponse)
         Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
+        String legalName = getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalName")
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, legalPersonSelectionResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
         assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
-        assertThat("Either legal name from dev or test business register", SamlUtils.getAttributeValue(assertion, "LegalName"), org.hamcrest.Matchers.oneOf("täisühing VAVILOV", "AS Hallebygg", "OÜ Ibor JFM"))
+        assertEquals("Either legal name from dev or test business register", SamlUtils.getAttributeValue(assertion, "LegalName"), legalName)
         assertEquals("Correct legal person identifier is returned", "EE/CA/" + getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"), SamlUtils.getAttributeValue(assertion, "LegalPersonIdentifier"))
     }
 

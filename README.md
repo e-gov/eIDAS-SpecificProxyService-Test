@@ -1,3 +1,5 @@
+<img src='img/eu_regional_development_fund_horizontal.jpg'>
+
 # eIDAS Proxy integration tests
 
 Tests for eIDAS proxy component (both eIDAS standard component and Estonia specific component)

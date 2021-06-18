@@ -6,7 +6,6 @@ import io.restassured.response.Response
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertThat
 
 class UserConsentSpec extends SpecificProxyServiceSpecification {
 

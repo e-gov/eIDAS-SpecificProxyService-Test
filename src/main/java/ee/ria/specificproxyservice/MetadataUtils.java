@@ -17,13 +17,11 @@ import java.security.cert.CertificateNotYetValidException;
 public class MetadataUtils {
     public static Credential getEncryptionCredentialFromMetaData(String body) throws CertificateException {
         java.security.cert.X509Certificate x509Certificate = getEncryptionCertificate(body);
-        BasicX509Credential encryptionCredential = new BasicX509Credential(x509Certificate);
-        return encryptionCredential;
+        return new BasicX509Credential(x509Certificate);
     }
     protected static java.security.cert.X509Certificate getEncryptionCertificate(String body) throws CertificateException {
         XmlPath metadataXml = new XmlPath(body);
-        java.security.cert.X509Certificate x509 = X509Support.decodeCertificate(metadataXml.getString("**.findAll {it.@use == 'encryption'}.KeyInfo.X509Data.X509Certificate"));
-        return x509;
+        return X509Support.decodeCertificate(metadataXml.getString("**.findAll {it.@use == 'encryption'}.KeyInfo.X509Data.X509Certificate"));
     }
     protected static void validateMetadataSignature(String body) {
         XmlPath metadataXml = new XmlPath(body);

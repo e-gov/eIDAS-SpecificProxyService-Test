@@ -120,8 +120,7 @@ public class ResponseAssertionBuilderUtils extends ResponseBuilderBase {
 
         Encrypter samlEncrypter = new Encrypter(encryptParams, keyParams);
         samlEncrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
-        EncryptedAssertion encryptedAssertion = samlEncrypter.encrypt(assertion);
-        return  encryptedAssertion;
+        return samlEncrypter.encrypt(assertion);
     }
 
     protected EncryptedAssertion buildEncrAssertionWithoutAssertionSignature(Credential encCredential, String inResponseId, String recipient, DateTime issueInstant, Integer acceptableTimeMin, String loa, String givenName, String familyName, String personIdentifier, String dateOfBirth, String issuerValue, String audienceUri) throws EncryptionException {
@@ -358,26 +357,4 @@ public class ResponseAssertionBuilderUtils extends ResponseBuilderBase {
 
         return encryptAssertion(assertion, encCredential);
     }
-
-    protected EncryptedAssertion buildEncrAssertionNameIdCnt(Integer nameIdCnt, String nameIdFormat,Credential signCredential, Credential encCredential, String inResponseId, String recipient, DateTime issueInstant, Integer acceptableTimeMin, String loa, String givenName, String familyName, String personIdentifier, String dateOfBirth, String issuerValue, String audienceUri) throws SecurityException, SignatureException, MarshallingException, EncryptionException {
-        Signature signature = prepareSignature(signCredential);
-        Assertion assertion = buildAssertionForSigning(inResponseId, recipient ,issueInstant, acceptableTimeMin, loa, givenName, familyName, personIdentifier, dateOfBirth, issuerValue, audienceUri);
-
-        if (nameIdCnt == 0) {
-            assertion.getSubject().setNameID(null);
-        }
-        else if (nameIdCnt == 1) {
-            assertion.getSubject().getNameID().setFormat(nameIdFormat);
-        }
-        else if (nameIdCnt == 2) {
-            //TODO: Have to find a way for that
-        }
-
-        assertion.setSignature(signature);
-        XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(assertion).marshall(assertion);
-        Signer.signObject(signature);
-
-        return encryptAssertion(assertion, encCredential);
-    }
-
 }

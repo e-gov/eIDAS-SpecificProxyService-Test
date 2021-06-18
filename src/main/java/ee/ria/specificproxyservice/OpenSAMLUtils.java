@@ -1,6 +1,5 @@
 package ee.ria.specificproxyservice;
 
-import ee.ria.specificproxyservice.OpenSAMLConfiguration;
 import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import net.shibboleth.utilities.java.support.xml.XMLParserException;

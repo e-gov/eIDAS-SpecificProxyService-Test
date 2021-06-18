@@ -3,6 +3,7 @@ package ee.ria.specificproxyservice
 import io.qameta.allure.Feature
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
+import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import spock.lang.Unroll
 
@@ -34,9 +35,9 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
-        assertThat(taraUrl, Matchers.stringContainsInOrder(mainStructure))
-        assertThat(taraUrl, Matchers.stringContainsInOrder(transformedLoa))
-        assertThat(taraUrl, Matchers.stringContainsInOrder(defaultLocale))
+        MatcherAssert.assertThat(taraUrl, Matchers.stringContainsInOrder(mainStructure))
+        MatcherAssert.assertThat(taraUrl, Matchers.stringContainsInOrder(transformedLoa))
+        MatcherAssert.assertThat(taraUrl, Matchers.stringContainsInOrder(defaultLocale))
 
         where:
         requestLoa                               || transformedLoa           || defaultLocale     || mainStructure
@@ -61,7 +62,7 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
-        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
+        MatcherAssert.assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
     }
 
     @Unroll
@@ -79,7 +80,7 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
-        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
+        MatcherAssert.assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid&"))
     }
 
     @Unroll
@@ -97,6 +98,6 @@ class OidcRequestSpec extends SpecificProxyServiceSpecification {
 
         String taraUrl =  response2.then().extract().response().getHeader("location")
 
-        assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid%20legalperson&"))
+        MatcherAssert.assertThat("Only supported attributes should be requested", taraUrl, Matchers.stringContainsInOrder("scope=openid%20idcard%20mid%20legalperson&"))
     }
 }

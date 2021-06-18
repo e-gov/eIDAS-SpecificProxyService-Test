@@ -154,11 +154,6 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         String returnUrl = flow.specificProxyService.taraBaseUrl + "/auth/reject?error_code=user_cancel"
 
         Response cancelResponse = Requests.backToServiceProvider(flow, returnUrl)
-        String backToSpUrl = cancelResponse.then().extract().response().getHeader("location")
-
-        String[] elements = backToSpUrl.split('\\?|&')
-
-        Response idpResponse =  Requests.idpResponse(flow, elements[0]+"?"+errorCode+"&"+errorMessage+"&"+elements[3])
 
         assertEquals("Correct status is returned", statusCode, cancelResponse.getStatusCode())
 
