@@ -1,4 +1,4 @@
-<img src='img/eu_regional_development_fund_horizontal.jpg'>
+<img src='doc/img/eu_regional_development_fund_horizontal.jpg' width="350" height="200">
 
 # eIDAS Proxy integration tests
 
