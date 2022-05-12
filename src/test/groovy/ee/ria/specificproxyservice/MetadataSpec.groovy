@@ -1,11 +1,22 @@
 package ee.ria.specificproxyservice
 
+import org.hamcrest.Matchers
+
 
 class MetadataSpec extends SpecificProxyServiceSpecification {
     Flow flow = new Flow(props)
 
-    def "Metadata has valid signature"() {
+    def "Specific proxy service metadata has valid signature"() {
         expect:
-        MetadataUtils.validateMetadataSignature(Requests.getMetadataBody(flow))
+        String metadata = Requests.getMetadataBody(flow.specificProxyService.fullMetadataUrl)
+        MetadataUtils.validateMetadataSignature(metadata)
+    }
+
+    def "Connector metadata has valid signature and does not contain SPType"() {
+        expect:
+        String metadata = Requests.getMetadataBody(flow.connector.fullMetadataUrl)
+        MetadataUtils.validateMetadataSignature(metadata)
+        metadata(Matchers.not(Matchers.containsString("SPType")))
+
     }
 }

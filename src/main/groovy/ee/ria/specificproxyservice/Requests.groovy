@@ -11,13 +11,13 @@ import static io.restassured.config.EncoderConfig.encoderConfig
 
 class Requests {
     @Step("GET metadata")
-    static String getMetadataBody(Flow flow) {
+    static String getMetadataBody(String metadataUrl) {
         return given()
                 .config(config().encoderConfig(encoderConfig().defaultContentCharset("UTF-8")))
                 .relaxedHTTPSValidation()
                 .filter(new AllureRestAssured())
                 .when()
-                .get(flow.specificProxyService.fullMetadataUrl)
+                .get(metadataUrl)
                 .then()
                 .statusCode(200)
                 .extract().body().asString()

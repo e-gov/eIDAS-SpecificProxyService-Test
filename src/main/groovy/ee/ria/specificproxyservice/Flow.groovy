@@ -59,6 +59,8 @@ class Connector {
     Credential signatureCredential
     Credential encryptionCredential
 
+    @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
+
     Connector(Properties properties) {
         this.host = properties."connector.host"
         this.port = properties."connector.port"
