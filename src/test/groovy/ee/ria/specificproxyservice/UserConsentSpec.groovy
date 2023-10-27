@@ -37,8 +37,8 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct date of birth is returned", dateOfBirth, consentViewResponse.body().htmlPath().get("**.find {it.@id == 'natural-person-date-of-birth'}").toString().trim())
 
         where:
-        spName       || familyName                   || firstName  || personalNumber || dateOfBirth
-        "DEMO-SP-CA" || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "60001019906"  || "01.01.2000"
+        spName       || familyName                   || firstName  || personalNumber  || dateOfBirth
+        "DEMO-SP-CA" || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE60001019906" || "01.01.2000"
     }
 
     @Unroll
@@ -65,8 +65,8 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct legal person name from dev or test business register is returned", consentViewResponse.body().htmlPath().get("**.find {it.@id == 'legal-person-name'}").toString().trim(), legalName)
 
         where:
-        spName       || familyName                   || firstName  || personalNumber || dateOfBirth
-        "DEMO-SP-CA" || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "60001019906"  || "01.01.2000"
+        spName       || familyName                   || firstName  || personalNumber  || dateOfBirth
+        "DEMO-SP-CA" || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE60001019906" || "01.01.2000"
     }
 }
 
