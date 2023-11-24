@@ -27,7 +27,7 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
         Response response = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
         Response response2 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
-        flow.setOauth2_consent_csrf(response2.getCookie("__Host-oauth2_consent_csrf_1316479801"))
+        flow.setOauth2_consent_csrf(response2.getCookie("__Host-ory_hydra_consent_csrf_1316479801"))
 
         Response consentViewResponse = Requests.followRedirect(flow, response2.getHeader("location"))
 
@@ -53,7 +53,7 @@ class UserConsentSpec extends SpecificProxyServiceSpecification {
         Response legalPersonSelectionResponse = Steps.selectLegalEntity(flow, getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalPersonIdentifier"))
         String legalName = getLegalEntityListResponse.body().jsonPath().get("legalPersons[0].legalName")
         Response response2 = Requests.followRedirectWithCsrfCookie(flow, legalPersonSelectionResponse.getHeader("location"))
-        flow.setOauth2_consent_csrf(response2.getCookie("__Host-oauth2_consent_csrf_1316479801"))
+        flow.setOauth2_consent_csrf(response2.getCookie("__Host-ory_hydra_consent_csrf_1316479801"))
 
         Response consentViewResponse = Requests.followRedirect(flow, response2.getHeader("location"))
 

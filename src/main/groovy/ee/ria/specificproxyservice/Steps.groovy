@@ -160,7 +160,7 @@ class Steps {
 
         Response authenticationResponse = Requests.startAuthenticationFlowInTara(flow, taraUrl)
         String location = authenticationResponse.then().extract().response().getHeader("location")
-        flow.setOauth2_authentication_csrf(authenticationResponse.getCookie("__Host-oauth2_authentication_csrf_1316479801"))
+        flow.setOauth2_authentication_csrf(authenticationResponse.getCookie("__Host-ory_hydra_login_csrf_1316479801"))
         URL locationUrl = new URL(location)
         String baseUrl = locationUrl.getProtocol() + "://" + (locationUrl.getPort() > 0 ? (":" + locationUrl.getPort()) : "") + locationUrl.getHost()
         flow.specificProxyService.setTaraBaseUrl(baseUrl)
@@ -191,7 +191,7 @@ class Steps {
     @Step("User consents with authentication")
     static Response userConsentAndFollowRedirects(Flow flow, Response response) {
         Response response1 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
-        flow.setOauth2_consent_csrf(response1.getCookie("__Host-oauth2_consent_csrf_1316479801"))
+        flow.setOauth2_consent_csrf(response1.getCookie("__Host-ory_hydra_consent_csrf_1316479801"))
         Requests.followRedirect(flow, response1.getHeader("location"))
 
         Response response2 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", true)
@@ -202,7 +202,7 @@ class Steps {
     @Step("User do not consent with authentication")
     static Response userDenyConsentAndFollowRedirects(Flow flow, Response response) {
         Response response1 = Requests.followRedirectWithCsrfCookie(flow, response.getHeader("location"))
-        flow.setOauth2_consent_csrf(response1.getCookie("__Host-oauth2_consent_csrf_1316479801"))
+        flow.setOauth2_consent_csrf(response1.getCookie("__Host-ory_hydra_consent_csrf_1316479801"))
         Requests.followRedirect(flow, response1.getHeader("location"))
 
         Response response2 = Requests.consentSubmit(flow, flow.specificProxyService.taraBaseUrl + "/auth/consent/confirm", false)
