@@ -165,7 +165,7 @@ class Steps {
         String baseUrl = locationUrl.getProtocol() + "://" + (locationUrl.getPort() > 0 ? (":" + locationUrl.getPort()) : "") + locationUrl.getHost()
         flow.specificProxyService.setTaraBaseUrl(baseUrl)
         Response authInitResponse = Requests.followRedirect(flow, location)
-        flow.setSessionId(authInitResponse.getCookie("SESSION"))
+        flow.setSessionId(authInitResponse.getCookie("__Host-SESSION"))
         flow.setCsrf(authInitResponse.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
         return authInitResponse
     }
