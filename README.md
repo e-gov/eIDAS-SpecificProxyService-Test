@@ -6,7 +6,7 @@ Tests for eIDAS proxy component (both eIDAS standard component and Estonia speci
 
 ## Prerequisites
 
-1. SUT (eIDAS proxy) must be deployed. It must have TARA2 configured as identity provider
+1. SUT (eIDAS proxy) must be deployed. It must have TARA configured as identity provider
    
 2. eIDAS connector metadata must be available. Either connector service must be deployed or metadata must be available through other means.
    
