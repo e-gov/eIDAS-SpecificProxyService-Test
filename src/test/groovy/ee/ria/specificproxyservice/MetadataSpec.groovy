@@ -1,6 +1,11 @@
 package ee.ria.specificproxyservice
 
-import org.hamcrest.Matchers
+import io.restassured.path.xml.XmlPath
+
+import static ee.ria.specificproxyservice.MetadataUtils.*
+import static org.hamcrest.Matchers.not
+import static org.hamcrest.Matchers.containsString
+import static org.junit.Assert.assertEquals
 
 
 class MetadataSpec extends SpecificProxyServiceSpecification {
@@ -9,14 +14,23 @@ class MetadataSpec extends SpecificProxyServiceSpecification {
     def "Specific proxy service metadata has valid signature"() {
         expect:
         String metadata = Requests.getMetadataBody(flow.specificProxyService.fullMetadataUrl)
-        MetadataUtils.validateMetadataSignature(metadata)
+        validateMetadataSignature(metadata)
     }
 
     def "Connector metadata has valid signature and does not contain SPType"() {
         expect:
         String metadata = Requests.getMetadataBody(flow.connector.fullMetadataUrl)
-        MetadataUtils.validateMetadataSignature(metadata)
-        metadata(Matchers.not(Matchers.containsString("SPType")))
+        validateMetadataSignature(metadata)
+        metadata(not(containsString("SPType")))
 
+    }
+
+    def "Specific proxy service metadata has node country defined"() {
+        expect:
+        String metadataXml = Requests.getMetadataBody(flow.specificProxyService.fullMetadataUrl)
+        XmlPath xmlPath = new XmlPath(metadataXml)
+
+        String nodeCountry = xmlPath.getString("EntityDescriptor.IDPSSODescriptor.Extensions.NodeCountry")
+        assertEquals("EE", nodeCountry)
     }
 }
