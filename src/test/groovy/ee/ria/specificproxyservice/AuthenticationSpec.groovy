@@ -108,7 +108,7 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
         where:
         comparisonLevel                               | requestLoa                                   || errorResponse
-        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "202002 - Invalid SAML Request token."
+        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "202015 - invalid value for Level of Assurance"
     }
 
     @Unroll
