@@ -37,10 +37,8 @@ class HeartBeatSpec extends SpecificProxyServiceSpecification {
                 .body("dependencies[0].status", Matchers.is("UP"))
                 .body("dependencies[1].name", Matchers.is("igniteCluster"))
                 .body("dependencies[1].status", Matchers.is("UP"))
-                .body("dependencies[2].name", Matchers.is("truststore"))
+                .body("dependencies[2].name", Matchers.is("proxyServiceMetadata"))
                 .body("dependencies[2].status", Matchers.is("UP"))
-                .body("dependencies[3].name", Matchers.is("proxyServiceMetadata"))
-                .body("dependencies[3].status", Matchers.is("UP"))
     }
 
     @Unroll
