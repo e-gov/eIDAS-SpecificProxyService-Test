@@ -27,6 +27,9 @@ class SpecificProxyService {
     String host
     String port
     String protocol
+    String nodeHost
+    String nodePort
+    String nodeProtocol
     String metadataUrl
     String authenticationRequestUrl
     String consentUrl
@@ -35,16 +38,19 @@ class SpecificProxyService {
 
     @Lazy fullMetadataUrl = "${protocol}://${host}:${port}${metadataUrl}"
     @Lazy fullAuthenticationRequestUrl = "${protocol}://${host}:${port}${authenticationRequestUrl}"
-    @Lazy fullheartbeatUrl = "${protocol}://${host}:${port}${heartbeatUrl}"
+    @Lazy fullheartbeatUrl = "${nodeProtocol}://${nodeHost}:${nodePort}${heartbeatUrl}"
 
     SpecificProxyService(Properties properties) {
         this.host = properties."specificproxyservice.host"
         this.port = properties."specificproxyservice.port"
         this.protocol = properties."specificproxyservice.protocol"
+        this.nodeHost = properties."specificproxyservice.node.host"
+        this.nodePort = properties."specificproxyservice.node.port"
+        this.nodeProtocol = properties."specificproxyservice.node.protocol"
         this.metadataUrl = properties."specificproxyservice.metadataUrl"
         this.authenticationRequestUrl = properties."specificproxyservice.authenticationRequestUrl"
-        this.consentUrl=properties."specificproxyservice.consentUrl"
-        this.heartbeatUrl=properties."specificproxyservice.heartbeatUrl"
+        this.consentUrl = properties."specificproxyservice.consentUrl"
+        this.heartbeatUrl = properties."specificproxyservice.heartbeatUrl"
     }
 
 }
