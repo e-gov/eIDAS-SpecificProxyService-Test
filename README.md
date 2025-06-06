@@ -38,6 +38,9 @@ Description of values:
 | specificproxyservice.protocol | https  | Service protocol. | 
 | specificproxyservice.host | ee-eidas-proxy  | Service URL. | 
 | specificproxyservice.port | 8083  | Service port. | 
+| specificproxyservice.node.protocol | https  | Service single node  protocol. | 
+| specificproxyservice.node.host | ee-eidas-proxy  | Service single node  URL. | 
+| specificproxyservice.node.port | 8083  | Service single node  port. | 
 | specificproxyservice.metadataUrl | /EidasNode/ServiceMetadata  | Service metadata endpoint. | 
 | specificproxyservice.authenticationRequestUrl | /EidasNode/ColleagueRequest  | Service authentication start endpoint. | 
 | specificproxyservice.consentUrl | /SpecificProxyService/Consent  | Consent endpoint. | 
