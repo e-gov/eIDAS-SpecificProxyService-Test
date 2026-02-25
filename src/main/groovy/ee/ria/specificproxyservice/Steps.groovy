@@ -166,7 +166,7 @@ class Steps {
         flow.specificProxyService.setTaraBaseUrl(baseUrl)
         Response authInitResponse = Requests.followRedirect(flow, location)
         flow.setSessionId(authInitResponse.getCookie("__Host-SESSION"))
-        flow.setCsrf(authInitResponse.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
+        flow.setCsrf(authInitResponse.body().htmlPath().get("**.find {it.@name == '_csrf'}.@content"))
         return authInitResponse
     }
 
@@ -184,7 +184,7 @@ class Steps {
     @Step("Display legal entity list")
     static Response getLegalEntityList(Flow flow, Response midAuthAcceptResponse) {
         Response response = Requests.submitLegalPersonInit(flow, flow.specificProxyService.taraBaseUrl + midAuthAcceptResponse.getHeader("location"))
-        flow.setCsrf(response.body().htmlPath().get("**.find {it.@name == '_csrf'}.@value"))
+        flow.setCsrf(response.body().htmlPath().get("**.find {it.@name == '_csrf'}.@content"))
         return Requests.getLegalPersonList(flow, flow.specificProxyService.taraBaseUrl + "/auth/legalperson")
     }
 
