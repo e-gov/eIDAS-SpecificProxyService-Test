@@ -6,7 +6,6 @@ import io.restassured.response.Response
 import org.opensaml.saml.saml2.core.Assertion
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration
 import org.opensaml.saml.saml2.core.NameIDType
-import spock.lang.Ignore
 import spock.lang.Unroll
 
 import static org.junit.Assert.assertEquals
@@ -112,7 +111,6 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "202015 - invalid value for Level of Assurance"
     }
 
-    @Ignore("AUT-2166")
     @Unroll
     @Feature("EXACT comparison is required for not notified LOAs")
     def "request authentication with required comparison for not notified schemas: #comparisonLevel and requested LOA: #requestLoa"() {
