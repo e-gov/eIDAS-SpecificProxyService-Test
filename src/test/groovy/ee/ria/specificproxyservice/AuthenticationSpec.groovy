@@ -27,54 +27,54 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("eIDAS-Node implementations MUST support the following SAML 2.0 name identifier formats")
-    def "request authentication with name identifier format: #nameIdFormat"() {
+    def "request authentication with name identifier format: #nameIdFormat, person: #person"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, nameIdFormat)
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse, person)
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
+        assertEquals("Correct LOA is returned", Steps.LOA_HIGH, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct family name is returned", person.familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
+        assertEquals("Correct first name is returned", person.firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
+        assertEquals("Correct id code is returned", person.eidasIdentifier, SamlUtils.getAttributeValue(assertion, FN_PNO))
+        assertEquals("Correct birth date is returned", person.dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
         assertEquals("Correct nameIdFormat is returned", nameIdFormat, SamlUtils.getSubjectNameIdFormatValue(assertion))
 
         where:
-        nameIdFormat           || familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
-        NameIDType.TRANSIENT   || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-        NameIDType.PERSISTENT  || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
-        NameIDType.UNSPECIFIED || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+        nameIdFormat           | person
+        NameIDType.TRANSIENT   | MidTestPerson.EE60001019906
+        NameIDType.PERSISTENT  | MidTestPerson.EE60001019906
+        NameIDType.UNSPECIFIED | MidTestPerson.EE60001019906
     }
 
     @Unroll
     @Feature("eIDAS-Node implementations MUST support requests without name identifier formats attribute")
-    def "request authentication without name identifier format"() {
+    def "request authentication without name identifier format, person: #person"() {
         expect:
         String samlRequest = Steps.getAuthnRequestWithoutNameIdFormat(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM)
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse, person)
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
+        assertEquals("Correct LOA is returned", Steps.LOA_HIGH, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct family name is returned", person.familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
+        assertEquals("Correct first name is returned", person.firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
+        assertEquals("Correct id code is returned", person.eidasIdentifier, SamlUtils.getAttributeValue(assertion, FN_PNO))
+        assertEquals("Correct birth date is returned", person.dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
         assertEquals("Correct nameIdFormat is returned", nameIdFormat, SamlUtils.getSubjectNameIdFormatValue(assertion))
 
         where:
-        nameIdFormat           || familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
-        NameIDType.UNSPECIFIED || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+        nameIdFormat           | person
+        NameIDType.UNSPECIFIED | MidTestPerson.EE60001019906
     }
 
     @Unroll
@@ -93,8 +93,8 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct LOA is returned", responseLoa, SamlUtils.getLoaValue(assertion))
 
         where:
-        comparisonLevel                               | requestLoa                                   || responseLoa
-        AuthnContextComparisonTypeEnumeration.MINIMUM | "http://eidas.europa.eu/LoA/high"            || "http://eidas.europa.eu/LoA/high"
+        comparisonLevel                               | requestLoa                        || responseLoa
+        AuthnContextComparisonTypeEnumeration.MINIMUM | "http://eidas.europa.eu/LoA/high" || "http://eidas.europa.eu/LoA/high"
     }
 
     @Unroll
@@ -107,8 +107,8 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'text-center'}"))
 
         where:
-        comparisonLevel                               | requestLoa                                   || errorResponse
-        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/LoA/high"            || "202015 - invalid value for Level of Assurance"
+        comparisonLevel                             | requestLoa                        || errorResponse
+        AuthnContextComparisonTypeEnumeration.EXACT | "http://eidas.europa.eu/LoA/high" || "202015 - invalid value for Level of Assurance"
     }
 
     @Unroll
@@ -124,8 +124,8 @@ class AuthenticationSpec extends SpecificProxyServiceSpecification {
         assertEquals("Reason for unsuccessful authentication.", errorMessage, samlResponseObj.status.statusMessage.message)
 
         where:
-        comparisonLevel                               | requestLoa                                   || errorMessage || statusCode
-        AuthnContextComparisonTypeEnumeration.EXACT   | "http://eidas.europa.eu/NotNotified/LoA/low" || "202015 - invalid value for Level of Assurance" || "urn:oasis:names:tc:SAML:2.0:status:Requester"
+        comparisonLevel                             | requestLoa                                   || errorMessage                                    || statusCode
+        AuthnContextComparisonTypeEnumeration.EXACT | "http://eidas.europa.eu/NotNotified/LoA/low" || "202015 - invalid value for Level of Assurance" || "urn:oasis:names:tc:SAML:2.0:status:Requester"
     }
 
     @Unroll

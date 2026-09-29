@@ -51,7 +51,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         "thisIsNotCorrectToken" || 400        || "Invalid token"
     }
 
-    @Ignore ("TARA2-95 After fix merge this test to: Error handling on ProxyServiceRequest with invalid token: #token ")
+    @Ignore("TARA2-95 After fix merge this test to: Error handling on ProxyServiceRequest with invalid token: #token ")
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     @Feature("AUTHENTICATION_REQUEST_LIGHTTOKEN_ACCEPTANCE")
@@ -68,8 +68,8 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
 
         where:
-        token                   || statusCode || message
-        ""                      || 400        || "Validation failed for object='requestParameters'. Error count: 1"
+        token || statusCode || message
+        ""    || 400        || "Validation failed for object='requestParameters'. Error count: 1"
     }
 
     @Unroll
@@ -87,9 +87,9 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
 
         where:
-        token                   || statusCode || message
-        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8b25Db25uZWN0b3JSZXF1ZXN0fDg1MmE2NGMwLThhYzEtNDQ1Zi1iMGUxLTk5MmFkYTQ5MzAzM3wyMDE3LTEyLTExIDE0OjEyOjA1IDE0OHw3TThwK3VQOENLWHVNaTJJcVNkYTF0ZzQ1MldsUnZjT1N3dTBkY2lzU1lFPQ"      || 400  || "Invalid token"
-        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8IG9uQ29ubmVjdG9yUmVxdWVzdHwgODUyYTY0YzAtOGFjMS00NDVmLWIwZTEtOTkyYWRhNDkzMDMzIHwgMjAxNy0xMi0xMSAxNDoxMjowNSAxNDh8N004cCt1UDhDS1h1TWkySXFTZGExdGc0NTJXbFJ2Y09Td3UwZGNpc1NZRT0" || 400  || "Invalid token"
+        token                                                                                                                                                                                                                 || statusCode || message
+        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8b25Db25uZWN0b3JSZXF1ZXN0fDg1MmE2NGMwLThhYzEtNDQ1Zi1iMGUxLTk5MmFkYTQ5MzAzM3wyMDE3LTEyLTExIDE0OjEyOjA1IDE0OHw3TThwK3VQOENLWHVNaTJJcVNkYTF0ZzQ1MldsUnZjT1N3dTBkY2lzU1lFPQ"      || 400        || "Invalid token"
+        "c3BlY2lmaWNDb21tdW5pY2F0aW9uRGVmaW5pdGl8IG9uQ29ubmVjdG9yUmVxdWVzdHwgODUyYTY0YzAtOGFjMS00NDVmLWIwZTEtOTkyYWRhNDkzMDMzIHwgMjAxNy0xMi0xMSAxNDoxMjowNSAxNDh8N004cCt1UDhDS1h1TWkySXFTZGExdGc0NTJXbFJ2Y09Td3UwZGNpc1NZRT0" || 400        || "Invalid token"
     }
 
     @Unroll
@@ -116,7 +116,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct error is returned", "Parameter 'token': must not be null", response2.getBody().jsonPath().get("errors"))
     }
 
-    @Ignore ("TARA2-95")
+    @Ignore("TARA2-95")
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     def "Error handling on over max length token"() {
@@ -125,7 +125,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
-        String token = "a"*1001
+        String token = "a" * 1001
 
         Response response2 = Requests.proxyServiceRequest(flow, action, token)
 
@@ -163,26 +163,26 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_SPTYPE")
-    def "request authentication with supported SPType: #spType"() {
+    def "request authentication with supported SPType: #spType, person: #person"() {
         expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse, person)
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", "http://eidas.europa.eu/LoA/high", SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
+        assertEquals("Correct LOA is returned", Steps.LOA_HIGH, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct family name is returned", person.familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
+        assertEquals("Correct first name is returned", person.firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
+        assertEquals("Correct id code is returned", person.eidasIdentifier, SamlUtils.getAttributeValue(assertion, FN_PNO))
+        assertEquals("Correct birth date is returned", person.dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
 
         where:
-        spType         ||  familyName                  || firstName  || personalNumber      || dateOfBirth  || loa_level
-        "public"       || "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN" || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+        spType   | person
+        "public" | MidTestPerson.EE60001019906
     }
 
     @Unroll
@@ -190,7 +190,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     @Feature("PROCESS_ERRORS")
     def "request authentication with not supported SPType: #spType"() {
         expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
 
         Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
@@ -200,7 +200,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         Response response2 = Requests.proxyServiceRequest(flow, action, token)
         response2.then().statusCode(302)
 
-        String taraUrl =  response2.then().extract().response().getHeader("location")
+        String taraUrl = response2.then().extract().response().getHeader("location")
 
         Response authenticationResponse = Requests.followRedirect(flow, taraUrl)
 
@@ -211,8 +211,8 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         assertEquals("Reason for unsuccessful authentication.", samlStatusMessage, samlResponseObj.status.statusMessage.message)
 
         where:
-        spType         || samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
-        "private"      || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "Service provider type not supported. Allowed types: [public]"
+        spType    || samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
+        "private" || "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "Service provider type not supported. Allowed types: [public]"
     }
 
     @Unroll
@@ -220,16 +220,16 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     @Feature("TECHNICAL_ERRORS")
     def "request authentication with invalid SPType: #spType"() {
         expect:
-        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA","http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
+        String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA", "http://eidas.europa.eu/LoA/high", AuthnContextComparisonTypeEnumeration.MINIMUM, NameIDType.UNSPECIFIED, spType)
 
         Response response = Requests.colleagueRequest(flow, samlRequest)
 
         assertEquals("Error is returned", errorResponse, response.body().htmlPath().get("**.find {it.@class == 'text-center'}").toString())
 
         where:
-        spType         || errorResponse
-        "notProvided"  || "202002 - Invalid SAML Request token."
-        ""             || "202002 - Invalid SAML Request token."
+        spType        || errorResponse
+        "notProvided" || "202002 - Invalid SAML Request token."
+        ""            || "202002 - Invalid SAML Request token."
     }
 
     @Unroll
@@ -240,7 +240,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
 
         assertEquals("Status 302 is returned", 302, specificProxyResponse.statusCode())
-     }
+    }
 
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_LEGAL_PERSON")
@@ -261,7 +261,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         Response response1 = Requests.colleagueRequest(flow, samlRequest)
 
         String action = response1.body().htmlPath().get("**.find {it.@id == 'redirectForm'}.@action")
-        String token = "a"*1001
+        String token = "a" * 1001
 
         Response response2 = Requests.proxyServiceRequest(flow, action, token)
         response2.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))

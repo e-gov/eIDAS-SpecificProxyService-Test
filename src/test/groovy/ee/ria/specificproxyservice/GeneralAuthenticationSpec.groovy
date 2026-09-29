@@ -33,26 +33,25 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
     @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     @Feature("CONSENT_ENDPOINT_USER_AGREE")
-    def "Successful natural person authentication with Mobile-ID"() {
+    def "Successful natural person authentication with Mobile-ID, person: #person"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Response taraInitResponse = Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
+        Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse, person)
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
         Response eidasResponse = Steps.finishAuthProcessInEidasNode(flow, taraAuthenticationResponse.getHeader("Location"))
 
         Assertion assertion = SamlResponseUtils.getSamlAssertionFromResponse(eidasResponse, flow.connector.encryptionCredential)
 
-        assertEquals("Correct LOA is returned", loa_level, SamlUtils.getLoaValue(assertion))
-        assertEquals("Correct family name is returned", familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
-        assertEquals("Correct first name is returned", firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
-        assertEquals("Correct id code is returned", personalNumber, SamlUtils.getAttributeValue(assertion, FN_PNO))
-        assertEquals("Correct birth date is returned", dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
+        assertEquals("Correct LOA is returned", Steps.LOA_HIGH, SamlUtils.getLoaValue(assertion))
+        assertEquals("Correct family name is returned", person.familyName, SamlUtils.getAttributeValue(assertion, FN_FAMILY))
+        assertEquals("Correct first name is returned", person.firstName, SamlUtils.getAttributeValue(assertion, FN_FIRST))
+        assertEquals("Correct id code is returned", person.eidasIdentifier, SamlUtils.getAttributeValue(assertion, FN_PNO))
+        assertEquals("Correct birth date is returned", person.dateOfBirth, SamlUtils.getAttributeValue(assertion, FN_DATE))
 
         where:
-        familyName                   || firstName     || personalNumber      || dateOfBirth  || loa_level
-        "O’CONNEŽ-ŠUSLIK TESTNUMBER" || "MARY ÄNN"    || "EE/CA/60001019906" || "2000-01-01" || "http://eidas.europa.eu/LoA/high"
+        person << [MidTestPerson.EE60001019906]
     }
 
     @Unroll
@@ -75,7 +74,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         where:
         samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
         "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
-      }
+    }
 
     @Unroll
     @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
@@ -98,7 +97,7 @@ class GeneralAuthenticationSpec extends SpecificProxyServiceSpecification {
         where:
         samlStatusCode                                 || samlSubStatusCode                                  || samlStatusMessage
         "urn:oasis:names:tc:SAML:2.0:status:Requester" || "urn:oasis:names:tc:SAML:2.0:status:RequestDenied" || "User canceled the authentication process"
-      }
+    }
 
     @Feature("Estonian authentication means return LOA_HIGH")
     @Feature("AUTHENTICATION_REQUEST_OK")

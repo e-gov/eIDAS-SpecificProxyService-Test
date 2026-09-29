@@ -19,7 +19,7 @@ class Steps {
                 "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
-                loa, comparison,nameIdFormat, spType)
+                loa, comparison, nameIdFormat, spType)
         String stringResponse = OpenSAMLUtils.getXmlString(request)
         Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
 
@@ -35,7 +35,7 @@ class Steps {
                 "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
-                loa, comparison,nameIdFormat, spType)
+                loa, comparison, nameIdFormat, spType)
         String stringResponse = OpenSAMLUtils.getXmlString(request)
         Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
 
@@ -66,7 +66,7 @@ class Steps {
                 "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
-                loa, comparison,nameIdFormat, spType)
+                loa, comparison, nameIdFormat, spType)
         String stringResponse = OpenSAMLUtils.getXmlString(request)
         Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
 
@@ -98,7 +98,7 @@ class Steps {
                 "${flow.specificProxyService.protocol}://${flow.specificProxyService.host}${flow.specificProxyService.authenticationRequestUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.authenticationResponseUrl}",
                 "${flow.connector.protocol}://${flow.connector.host}:${flow.connector.port}${flow.connector.metadataUrl}",
-                loa, comparison,nameIdFormat, spType)
+                loa, comparison, nameIdFormat, spType)
         String stringResponse = OpenSAMLUtils.getXmlString(request)
         Allure.addAttachment("Request", "application/xml", stringResponse, "xml")
 
@@ -156,7 +156,7 @@ class Steps {
 
     @Step("Start authentication flow in TARA")
     static Response startAuthProcessInTara(Flow flow, Response response) {
-        String taraUrl =  response.then().extract().response().getHeader("location")
+        String taraUrl = response.then().extract().response().getHeader("location")
 
         Response authenticationResponse = Requests.startAuthenticationFlowInTara(flow, taraUrl)
         String location = authenticationResponse.then().extract().response().getHeader("location")
@@ -171,8 +171,8 @@ class Steps {
     }
 
     @Step("Authenticate with MID and follow redirects to consent")
-    static Response authenticateWithMidAndFollowRedirects(Flow flow, Response taraLoginPageResponse) {
-        MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, "00000766", "60001019906", 7000)
+    static Response authenticateWithMidAndFollowRedirects(Flow flow, Response taraLoginPageResponse, MidTestPerson person = MidTestPerson.EE60001019906) {
+        MobileId.authenticateWithMobileId(flow, taraLoginPageResponse, person.phoneNumber, person.idCode, 7000)
         return Requests.submitAuthenticationAccept(flow, flow.specificProxyService.taraBaseUrl + "/auth/accept")
     }
 
