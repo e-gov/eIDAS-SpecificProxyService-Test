@@ -5,6 +5,7 @@ import io.restassured.filter.log.RequestLoggingFilter
 import io.restassured.filter.log.ResponseLoggingFilter
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.opensaml.core.config.InitializationService
+import org.opensaml.saml.saml2.core.NameIDType
 import org.opensaml.security.credential.Credential
 import spock.lang.Shared
 import spock.lang.Specification
@@ -14,6 +15,9 @@ import java.security.KeyStore
 import java.security.Security
 
 class SpecificProxyServiceSpecification extends Specification {
+    static final List<String> SUPPORTED_NAME_ID_FORMATS =
+            [NameIDType.UNSPECIFIED, NameIDType.TRANSIENT, NameIDType.PERSISTENT]
+
     @Shared
     Properties props = new Properties()
     @Shared

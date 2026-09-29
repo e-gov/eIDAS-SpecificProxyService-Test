@@ -3,6 +3,8 @@ package ee.ria.specificproxyservice
 import io.restassured.path.xml.XmlPath
 
 import static ee.ria.specificproxyservice.MetadataUtils.*
+import static org.hamcrest.MatcherAssert.assertThat
+import static org.hamcrest.Matchers.containsInAnyOrder
 import static org.hamcrest.Matchers.not
 import static org.hamcrest.Matchers.containsString
 import static org.junit.Assert.assertEquals
@@ -32,5 +34,14 @@ class MetadataSpec extends SpecificProxyServiceSpecification {
 
         String nodeCountry = xmlPath.getString("EntityDescriptor.IDPSSODescriptor.Extensions.NodeCountry")
         assertEquals("EE", nodeCountry)
+    }
+
+    def "Specific proxy service metadata publishes supported name identifier formats"() {
+        expect:
+        String metadataXml = Requests.getMetadataBody(flow.specificProxyService.fullMetadataUrl)
+        XmlPath xmlPath = new XmlPath(metadataXml)
+
+        List<String> publishedFormats = xmlPath.getList("EntityDescriptor.IDPSSODescriptor.NameIDFormat")
+        assertThat(publishedFormats, containsInAnyOrder(SUPPORTED_NAME_ID_FORMATS.toArray()))
     }
 }
