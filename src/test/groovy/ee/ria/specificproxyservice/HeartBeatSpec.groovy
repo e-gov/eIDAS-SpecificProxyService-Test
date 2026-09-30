@@ -1,6 +1,7 @@
 package ee.ria.specificproxyservice
 
 import io.qameta.allure.Feature
+import static ee.ria.specificproxyservice.ResponseAssertions.assertSecurityHeaders
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
 import org.hamcrest.Matchers
@@ -25,7 +26,7 @@ class HeartBeatSpec extends SpecificProxyServiceSpecification {
 
         Response heartBeat = Requests.getHeartbeat(flow)
         heartBeat.then()
-                .body("status", Matchers.notNullValue())
+                .body("status", Matchers.is("UP"))
                 .body("name", Matchers.notNullValue())
                 .body("version", Matchers.notNullValue())
                 .body("commitId", Matchers.notNullValue())
@@ -33,6 +34,7 @@ class HeartBeatSpec extends SpecificProxyServiceSpecification {
                 .body("buildTime", Matchers.notNullValue())
                 .body("startTime", Matchers.notNullValue())
                 .body("currentTime", Matchers.notNullValue())
+                .body("dependencies", Matchers.hasSize(3))
                 .body("dependencies[0].name", Matchers.is("authenticationService"))
                 .body("dependencies[0].status", Matchers.is("UP"))
                 .body("dependencies[1].name", Matchers.is("igniteCluster"))
@@ -48,6 +50,7 @@ class HeartBeatSpec extends SpecificProxyServiceSpecification {
         expect:
         Response heartBeat = Requests.getHeartbeat(flow)
         heartBeat.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
+        assertSecurityHeaders(heartBeat)
     }
 
 }

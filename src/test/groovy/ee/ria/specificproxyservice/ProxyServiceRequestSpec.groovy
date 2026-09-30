@@ -1,6 +1,7 @@
 package ee.ria.specificproxyservice
 
 import io.qameta.allure.Feature
+import static ee.ria.specificproxyservice.ResponseAssertions.assertSecurityHeaders
 import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.RestAssured
 import io.restassured.filter.cookie.CookieFilter
@@ -14,6 +15,7 @@ import spock.lang.Unroll
 
 import static io.restassured.RestAssured.given
 import static io.restassured.config.EncoderConfig.encoderConfig
+import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.Assert.assertEquals
 
 class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
@@ -44,6 +46,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", statusCode, response2.getStatusCode())
         assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
 
         where:
         token                   || statusCode || message
@@ -66,6 +69,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", statusCode, response2.getStatusCode())
         assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
 
         where:
         token || statusCode || message
@@ -85,6 +89,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", statusCode, response2.getStatusCode())
         assertEquals("Correct message is returned", message, response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
 
         where:
         token                                                                                                                                                                                                                 || statusCode || message
@@ -113,6 +118,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", 400, response2.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='requestParameters'. Error count: 1", response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", "Parameter 'token': must not be null", response2.getBody().jsonPath().get("errors"))
     }
 
@@ -131,6 +137,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", 400, response2.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='requestParameters'. Error count: 1", response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", "Parameter 'token': exceeds max length", response2.getBody().jsonPath().get("errors"))
     }
 
@@ -158,6 +165,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status code is returned", 400, response2.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='requestParameters'. Error count: 1", response2.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", response2.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", "Parameter 'token': using multiple instances of parameter is not allowed", response2.getBody().jsonPath().get("errors"))
     }
 
@@ -255,7 +263,7 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
     @Unroll
     @Feature("AUTHENTICATION_REQUEST_PROXY_ENDPOINT")
     @Feature("SECURITY")
-    def "Verify proxy response header"() {
+    def "Verify proxy response headers on a rejected request"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response response1 = Requests.colleagueRequest(flow, samlRequest)
@@ -264,6 +272,8 @@ class ProxyServiceRequestSpec extends SpecificProxyServiceSpecification {
         String token = "a" * 1001
 
         Response response2 = Requests.proxyServiceRequest(flow, action, token)
+        assertEquals("Request is rejected", 400, response2.getStatusCode())
         response2.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
+        assertSecurityHeaders(response2)
     }
 }

@@ -1,11 +1,13 @@
 package ee.ria.specificproxyservice
 
 import io.qameta.allure.Feature
+import static ee.ria.specificproxyservice.ResponseAssertions.assertSecurityHeaders
 import io.restassured.filter.cookie.CookieFilter
 import io.restassured.response.Response
 import org.hamcrest.Matchers
 import spock.lang.Unroll
 
+import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.Assert.assertEquals
 
 
@@ -32,15 +34,16 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
-        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+state)
+        Response validateableResponse = Requests.idpResponse(flow, elements[0] + "?" + elements[1] + state)
 
         assertEquals("Correct status is returned", statusCode, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", message, validateableResponse.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", validateableResponse.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", error, validateableResponse.getBody().jsonPath().get("errors"))
 
         where:
-        state                      || statusCode || message         || error
-        "&state=some-random-state" || 400        || "Invalid state" || null
+        state                      || statusCode || message                                                             || error
+        "&state=some-random-state" || 400        || "Invalid state"                                                     || null
         ""                         || 400        || "Validation failed for object='idpCallbackRequest'. Error count: 1" || "Parameter 'state': must not be empty"
     }
 
@@ -56,16 +59,17 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
-        Response validateableResponse = Requests.idpResponse(flow, elements[0]+code+elements[2]+"&"+elements[3])
+        Response validateableResponse = Requests.idpResponse(flow, elements[0] + code + elements[2] + "&" + elements[3])
 
         assertEquals("Correct status is returned", statusCode, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", message, validateableResponse.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", validateableResponse.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", error, validateableResponse.getBody().jsonPath().get("errors"))
 
         where:
-        code                      || statusCode || message         || error
-        "?code=some-random-code&"  || 500        || "Something went wrong internally. Please consult server logs for further details." || null
-        "?"                        || 400        || "Either error or code parameter is required" || null
+        code                      || statusCode || message                                                                            || error
+        "?code=some-random-code&" || 500        || "Something went wrong internally. Please consult server logs for further details." || null
+        "?"                       || 400        || "Either error or code parameter is required"                                       || null
     }
 
     @Unroll
@@ -80,10 +84,11 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
-        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[3]+"&"+elements[3])
+        Response validateableResponse = Requests.idpResponse(flow, elements[0] + "?" + elements[1] + "&" + elements[2] + "&" + elements[3] + "&" + elements[3])
 
         assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='idpCallbackRequest'. Error count: 1", validateableResponse.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", validateableResponse.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", "Parameter 'state': using multiple instances of parameter is not allowed", validateableResponse.getBody().jsonPath().get("errors"))
     }
 
@@ -99,10 +104,11 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         String[] elements = taraAuthenticationResponse.getHeader("location").split('\\?|&')
 
-        Response validateableResponse = Requests.idpResponse(flow, elements[0]+"?"+elements[1]+"&"+elements[2]+"&"+elements[1]+"&"+elements[3])
+        Response validateableResponse = Requests.idpResponse(flow, elements[0] + "?" + elements[1] + "&" + elements[2] + "&" + elements[1] + "&" + elements[3])
 
         assertEquals("Correct status is returned", 400, validateableResponse.getStatusCode())
         assertEquals("Correct message is returned", "Validation failed for object='idpCallbackRequest'. Error count: 1", validateableResponse.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", validateableResponse.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
         assertEquals("Correct error is returned", "Parameter 'code': using multiple instances of parameter is not allowed", validateableResponse.getBody().jsonPath().get("errors"))
     }
 
@@ -116,7 +122,7 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         Response midAuthAcceptResponse = Steps.authenticateWithMidAndFollowRedirects(flow, taraInitResponse)
         Response taraAuthenticationResponse = Steps.userConsentAndFollowRedirects(flow, midAuthAcceptResponse)
 
-        Response validateableResponse = Requests.idpResponse(flow,  taraAuthenticationResponse.getHeader("location")+"&randomParam=someValue")
+        Response validateableResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("location") + "&randomParam=someValue")
 
         assertEquals("Correct status is returned", 302, validateableResponse.getStatusCode())
     }
@@ -124,12 +130,13 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
     @Unroll
     @Feature("LOGIN_ENDPOINT_INPUT_VALIDATION")
     @Feature("LOGIN_ENDPOINT_FAILED_LOGIN")
-    def "OIDC returns usupported error on login"() {
+    // asserts TARA's error envelope, not the Proxy's - its incident field is incident_nr
+    def "OIDC returns unsupported error on login"() {
         expect:
         String samlRequest = Steps.getAuthnRequest(flow, "DEMO-SP-CA")
         Response specificProxyResponse = Steps.startAuthProcessInEidasNode(flow, samlRequest)
         Steps.startAuthProcessInTara(flow, specificProxyResponse)
-        String returnUrl = flow.specificProxyService.taraBaseUrl + "/auth/reject"+errorCode
+        String returnUrl = flow.specificProxyService.taraBaseUrl + "/auth/reject" + errorCode
 
         Response cancelResponse = Requests.backToServiceProvider(flow, returnUrl)
 
@@ -138,8 +145,8 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct error is returned", error, cancelResponse.getBody().jsonPath().get("error"))
 
         where:
-        errorCode            || statusCode || message         || error
-        "?error_code=hacked" || 400        || "authReject.errorCode: the only supported value is: 'user_cancel'" || "Bad Request"
+        errorCode            || statusCode | message                                                            | error
+        "?error_code=hacked" || 400        | "authReject.errorCode: the only supported value is: 'user_cancel'" | "Bad Request"
     }
 
     @Unroll
@@ -158,9 +165,9 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         assertEquals("Correct status is returned", statusCode, cancelResponse.getStatusCode())
 
         where:
-        errorCode           | errorMessage                        || statusCode
+        errorCode           | errorMessage                                        || statusCode
         "error=user_cancel" | "error_description=User+canceled+the+login+process" || 302
-        "error=user_cancel" | "error_description=other+description" || 302
+        "error=user_cancel" | "error_description=other+description"               || 302
     }
 
     @Unroll
@@ -178,6 +185,7 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
 
         assertEquals("Correct status is returned", 400, idpResponse.getStatusCode())
         assertEquals("Correct message is returned", "Invalid state", idpResponse.getBody().jsonPath().get("message"))
+        assertThat("Incident number is present", idpResponse.getBody().jsonPath().get("incidentNumber"), Matchers.notNullValue())
     }
 
     @Unroll
@@ -194,5 +202,6 @@ class IdpResponseSpec extends SpecificProxyServiceSpecification {
         Response idpResponse = Requests.idpResponse(flow, taraAuthenticationResponse.getHeader("Location"))
 
         idpResponse.then().header("Content-Security-Policy", Matchers.is(contentSecurityPolicy))
+        assertSecurityHeaders(idpResponse)
     }
 }

@@ -23,8 +23,7 @@ class MetadataSpec extends SpecificProxyServiceSpecification {
         expect:
         String metadata = Requests.getMetadataBody(flow.connector.fullMetadataUrl)
         validateMetadataSignature(metadata)
-        metadata(not(containsString("SPType")))
-
+        assertThat(metadata, not(containsString("SPType")))
     }
 
     def "Specific proxy service metadata has node country defined"() {

@@ -219,4 +219,18 @@ class Requests {
                         .then()
                         .extract().response()
     }
+
+    @Step("{method} {url}")
+    static Response request(Flow flow, String method, String url, Map<String, String> headers = [:]) {
+        return given()
+                .filter(flow.cookieFilter)
+                .filter(new AllureRestAssured())
+                .headers(headers)
+                .relaxedHTTPSValidation()
+                .when()
+                .redirects().follow(false)
+                .request(method, url)
+                .then()
+                .extract().response()
+    }
 }
